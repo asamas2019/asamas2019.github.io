@@ -1,5 +1,258 @@
-   <!doctype html>
-   <meta charset="utf-8">
-   <meta http-equiv="refresh" content="0; url=https://usa3.fastcast4u.com/start/agstweb">
-   <title>Radio Pop</title>
-   <a href="https://usa3.fastcast4u.com/start/agstweb">Ir a la radio</a>
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radio Pop</title>
+<meta name="description" content="Radio Pop: pop en español e inglés, las 24 horas.">
+<meta name="theme-color" content="#ffffff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ====== CAMBIÁ ACÁ LOS COLORES ====== */
+  :root {
+    --fondo: #ffffff;
+    --tarjeta: #ffffff;
+    --texto: #1b1530;
+    --suave: #6b6480;
+    --acento: #e0306c;
+    --acento-2: #f59e0b;
+    --borde: #ece7f2;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(60rem 40rem at 85% -10%, #e0306c14, transparent 60%),
+      radial-gradient(50rem 35rem at -10% 110%, #f59e0b14, transparent 60%),
+      var(--fondo);
+    color: var(--texto);
+    font-family: "Inter", system-ui, sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 2rem 1rem 3rem;
+  }
+  header { width: 100%; max-width: 30rem; margin-bottom: 1.5rem; }
+  .marca {
+    font-family: "Bricolage Grotesque", sans-serif; font-weight: 800;
+    font-size: clamp(2.6rem, 11vw, 3.6rem); line-height: .95; letter-spacing: -.03em;
+  }
+  .marca span { color: var(--acento); }
+  .lema { color: var(--suave); margin-top: .5rem; }
+
+  .reproductor {
+    width: 100%; max-width: 30rem;
+    background: var(--tarjeta); border: 1px solid var(--borde);
+    border-radius: 1.5rem; padding: 1.5rem;
+    box-shadow: 0 1.25rem 2.5rem #1b15301a;
+  }
+  .estado {
+    display: inline-flex; align-items: center; gap: .45rem;
+    font-size: .8rem; font-weight: 500; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--suave);
+  }
+  .punto { width: .55rem; height: .55rem; border-radius: 50%; background: var(--suave); }
+  .sonando .punto { background: var(--acento); animation: latido 1.4s ease-in-out infinite; }
+  .sonando .estado { color: var(--acento); }
+  @keyframes latido { 50% { opacity: .3; transform: scale(.8); } }
+
+  .tema { display: flex; gap: 1rem; align-items: center; margin: 1.25rem 0 1.5rem; }
+  .tapa {
+    width: 5.5rem; height: 5.5rem; flex: none; border-radius: 1rem; overflow: hidden;
+    background: linear-gradient(135deg, var(--acento), var(--acento-2));
+    display: grid; place-items: center;
+  }
+  .tapa img { width: 100%; height: 100%; object-fit: cover; display: none; }
+  .tapa svg { width: 2.4rem; height: 2.4rem; fill: #ffffffd9; }
+  .titulo {
+    font-family: "Bricolage Grotesque", sans-serif; font-weight: 500;
+    font-size: 1.3rem; line-height: 1.2;
+  }
+  .artista { color: var(--suave); margin-top: .25rem; }
+  .titulo, .artista { overflow-wrap: anywhere; }
+
+  .controles { display: flex; align-items: center; gap: 1rem; }
+  .play {
+    width: 4.25rem; height: 4.25rem; flex: none; border: 0; border-radius: 50%;
+    background: var(--acento); color: #fff; cursor: pointer;
+    display: grid; place-items: center;
+    transition: transform .15s ease, box-shadow .15s ease;
+    box-shadow: 0 .6rem 1.5rem #e0306c4d;
+  }
+  .play:hover { transform: scale(1.05); }
+  .play:active { transform: scale(.96); }
+  .play:focus-visible { outline: 3px solid var(--acento-2); outline-offset: 3px; }
+  .play svg { width: 1.7rem; height: 1.7rem; fill: currentColor; }
+  .volumen { flex: 1; display: flex; align-items: center; gap: .6rem; color: var(--suave); }
+  .volumen svg { width: 1.3rem; height: 1.3rem; fill: currentColor; flex: none; }
+  input[type=range] { width: 100%; accent-color: var(--acento); }
+
+  .aviso { min-height: 1.2rem; margin-top: 1rem; font-size: .85rem; color: var(--acento-2); }
+
+  .historial { width: 100%; max-width: 30rem; margin-top: 2rem; }
+  .historial h2 {
+    font-size: .8rem; font-weight: 500; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--suave); margin-bottom: .75rem;
+  }
+  .historial ol { list-style: none; padding: 0; }
+  .historial li {
+    padding: .7rem 0; border-bottom: 1px solid var(--borde);
+    display: flex; gap: .75rem; align-items: baseline;
+  }
+  .historial li b { font-weight: 500; }
+  .historial li small { color: var(--suave); }
+  .historial .vacio { color: var(--suave); border: 0; }
+
+  footer {
+    width: 100%; max-width: 30rem; margin-top: 2.5rem;
+    font-size: .8rem; line-height: 1.5; color: var(--suave);
+  }
+  footer a { color: var(--texto); }
+</style>
+</head>
+<body>
+
+<header>
+  <!-- ====== CAMBIÁ ACÁ EL NOMBRE Y EL LEMA ====== -->
+  <h1 class="marca">Radio<br><span>Pop</span></h1>
+  <p class="lema">Pop en español e inglés, las 24 horas.</p>
+</header>
+
+<main class="reproductor" id="reproductor">
+  <div class="estado"><span class="punto"></span><span id="estado">En vivo</span></div>
+
+  <div class="tema">
+    <div class="tapa">
+      <img id="tapa" alt="">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
+    </div>
+    <div>
+      <p class="titulo" id="titulo">Radio Pop</p>
+      <p class="artista" id="artista">Tocá play para escuchar</p>
+    </div>
+  </div>
+
+  <div class="controles">
+    <button class="play" id="play" aria-label="Escuchar">
+      <svg id="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <label class="volumen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4z"/></svg>
+      <input type="range" id="volumen" min="0" max="1" step="0.01" value="0.8" aria-label="Volumen">
+    </label>
+  </div>
+
+  <p class="aviso" id="aviso" role="status"></p>
+</main>
+
+<section class="historial" aria-labelledby="titulo-historial">
+  <h2 id="titulo-historial">Sonó recién</h2>
+  <ol id="lista"><li class="vacio">Todavía no hay datos.</li></ol>
+</section>
+
+<footer>
+  <p>La música es de artistas independientes de
+    <a href="https://www.jamendo.com" target="_blank" rel="noopener">Jamendo</a>,
+    bajo licencias Creative Commons. Cada tema pertenece a su artista.</p>
+</footer>
+
+<audio id="audio" preload="none"></audio>
+
+<script>
+  // ====== DATOS DE TU RADIO ======
+  const STREAM = "https://usa3.fastcast4u.com/proxy/agstweb/stream";
+  const INFO = "https://usa3.fastcast4u.com/rpc/agstweb/streaminfo.get";
+
+  const audio = document.getElementById("audio");
+  const boton = document.getElementById("play");
+  const icono = document.getElementById("icono");
+  const aviso = document.getElementById("aviso");
+  const caja = document.getElementById("reproductor");
+  const PLAY = '<path d="M8 5v14l11-7z"/>';
+  const PAUSA = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+  let sonando = false;
+
+  audio.volume = 0.8;
+  document.getElementById("volumen").addEventListener("input", e => audio.volume = e.target.value);
+
+  boton.addEventListener("click", () => {
+    if (sonando) {
+      audio.pause();
+      audio.removeAttribute("src");   // al volver, retoma en vivo y no donde quedó
+      audio.load();
+      ponerEstado(false);
+    } else {
+      aviso.textContent = "Conectando…";
+      audio.src = STREAM + "?t=" + Date.now();
+      audio.play().then(() => { aviso.textContent = ""; ponerEstado(true); })
+        .catch(() => { aviso.textContent = "No se pudo conectar. Probá de nuevo en un momento."; });
+    }
+  });
+  audio.addEventListener("error", () => {
+    if (sonando) { aviso.textContent = "Se cortó la señal. Tocá play para reconectar."; ponerEstado(false); }
+  });
+
+  function ponerEstado(on) {
+    sonando = on;
+    caja.classList.toggle("sonando", on);
+    icono.innerHTML = on ? PAUSA : PLAY;
+    boton.setAttribute("aria-label", on ? "Pausar" : "Escuchar");
+  }
+
+  // ====== QUÉ ESTÁ SONANDO (datos de Centova) ======
+  const historial = [];
+  function pedirInfo() {
+    const nombre = "cb" + Date.now();
+    const s = document.createElement("script");
+    window[nombre] = datos => { mostrar(datos); limpiar(); };
+    function limpiar() { delete window[nombre]; s.remove(); }
+    s.onerror = limpiar;
+    s.src = INFO + "?callback=" + nombre;
+    document.body.appendChild(s);
+  }
+
+  function mostrar(datos) {
+    const d = datos && datos.data && datos.data[0];
+    if (!d) return;
+    const pista = d.track || {};
+    let artista = pista.artist || "", titulo = pista.title || "";
+    if (!titulo && d.song) {
+      const partes = String(d.song).split(" - ");
+      artista = partes.length > 1 ? partes.shift() : "";
+      titulo = partes.join(" - ");
+    }
+    if (!titulo) return;
+    titulo = titulo.replace(/^\d+ - /, "");   // saca el número de Jamendo del nombre
+    document.getElementById("titulo").textContent = titulo;
+    document.getElementById("artista").textContent = artista || "Radio Pop";
+    document.getElementById("estado").textContent =
+      d.server === "Online" || d.server === undefined ? "En vivo" : "Fuera del aire";
+
+    const img = document.getElementById("tapa");
+    const url = pista.imageurl;
+    if (url && !/nocover/i.test(url)) { img.src = url; img.style.display = "block"; }
+    else { img.style.display = "none"; }
+
+    const clave = artista + "|" + titulo;
+    if (historial[0] !== clave) {
+      historial.unshift(clave);
+      historial.length = Math.min(historial.length, 6);
+      const lista = document.getElementById("lista");
+      lista.innerHTML = "";
+      historial.slice(1).forEach(item => {
+        const [a, t] = item.split("|");
+        const li = document.createElement("li");
+        li.innerHTML = "<b></b><small></small>";
+        li.querySelector("b").textContent = t;
+        li.querySelector("small").textContent = a;
+        lista.appendChild(li);
+      });
+      if (!lista.children.length) lista.innerHTML = '<li class="vacio">Todavía no hay datos.</li>';
+    }
+  }
+
+  pedirInfo();
+  setInterval(pedirInfo, 15000);
+</script>
+</body>
+</html>
