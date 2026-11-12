@@ -54,6 +54,8 @@
     color: var(--suave);
   }
   .cabecera { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+  .etiquetas { display: flex; gap: .35rem; flex-wrap: wrap; justify-content: flex-end; }
+  .calidad[hidden] { display: none; }
   .calidad {
     font-size: .75rem; font-weight: 500; color: var(--suave);
     border: 1px solid var(--borde); border-radius: 1rem; padding: .2rem .6rem;
@@ -163,7 +165,10 @@
 <main class="reproductor" id="reproductor">
   <div class="cabecera">
     <div class="estado"><span class="punto"></span><span id="estado">En vivo</span></div>
-    <span class="calidad" id="calidad" title="Calidad de audio de la transmisión">Calidad: MP3 96 kbps</span>
+    <div class="etiquetas">
+      <span class="calidad" id="oyentes" title="Personas escuchando ahora" hidden></span>
+      <span class="calidad" id="calidad" title="Calidad de audio de la transmisión">Calidad: MP3 96 kbps</span>
+    </div>
   </div>
 
   <div class="tema">
@@ -358,10 +363,17 @@
     document.body.appendChild(s);
   }
   // Pide a la radio el tema actual y el historial (una sola consulta para las dos cosas)
+  function textoOyentes(n) { return "👥 " + n + (n === 1 ? " oyente" : " oyentes"); }
+
   function pedirInfo() {
     fetch(AHORA, { cache: "no-store" })
       .then(r => r.json())
-      .then(j => { mostrar(j); usarHistorial({ data: [j.historial || []] }); })
+      .then(j => {
+        mostrar(j); usarHistorial({ data: [j.historial || []] });
+        const o = document.getElementById("oyentes");
+        o.hidden = typeof j.oyentes !== "number";
+        if (!o.hidden) o.textContent = textoOyentes(j.oyentes);
+      })
       .catch(() => {});
   }
 
