@@ -4,8 +4,25 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Radio Pop en Español</title>
-<meta name="description" content="Radio Pop en Español, las 24 horas.">
-<meta name="theme-color" content="#ffffff">
+<meta name="description" content="Pop en español las 24 horas, con artistas independientes. Radio online de Uruguay.">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<!-- Vista previa al compartir el enlace (WhatsApp, Facebook, X…) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Radio Pop en Español">
+<meta property="og:description" content="Pop en español las 24 horas, con artistas independientes. Tocá play y escuchá en vivo.">
+<meta property="og:url" content="https://asamas2019.github.io/">
+<meta property="og:image" content="https://asamas2019.github.io/img/compartir.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="es_UY">
+<meta name="twitter:card" content="summary_large_image">
+<!-- Íconos: pestaña del navegador y pantalla de inicio del celular -->
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="img/icono-192.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
@@ -20,33 +37,58 @@
     --acento-2: #06b6d4;
     --borde: #e2e8f0;
     --error: #b42318;
+    --sombra: #0f172a14;
+    --brillo-1: #2563eb14;
+    --brillo-2: #06b6d414;
+  }
+  /* Modo oscuro: se activa solo si el celular o la PC lo tienen activado */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fondo: #0b1220;
+      --tarjeta: #111a2e;
+      --texto: #e8edf6;
+      --suave: #94a3b8;
+      --acento: #3b82f6;
+      --acento-2: #22d3ee;
+      --borde: #23304a;
+      --sombra: #00000059;
+      --brillo-1: #3b82f62e;
+      --brillo-2: #22d3ee1f;
+    }
   }
   * { box-sizing: border-box; margin: 0; }
   body {
     min-height: 100vh;
     background:
-      radial-gradient(60rem 40rem at 85% -10%, #2563eb14, transparent 60%),
-      radial-gradient(50rem 35rem at -10% 110%, #06b6d414, transparent 60%),
+      radial-gradient(60rem 40rem at 85% -10%, var(--brillo-1), transparent 60%),
+      radial-gradient(50rem 35rem at -10% 110%, var(--brillo-2), transparent 60%),
       var(--fondo);
     color: var(--texto);
     font-family: "Inter", system-ui, sans-serif;
     display: flex; flex-direction: column; align-items: center;
     padding: 2rem 1rem 3rem;
   }
-  header { width: 100%; max-width: 30rem; margin-bottom: 1.5rem; }
+  header {
+    width: 100%; max-width: 30rem; margin-bottom: 1.25rem;
+    display: flex; align-items: center; gap: .85rem;
+  }
+  .logo { width: 3.25rem; height: 3.25rem; border-radius: .9rem; flex: none; }
   .marca {
     font-family: "Bricolage Grotesque", sans-serif; font-weight: 800;
-    font-size: clamp(2.6rem, 11vw, 3.6rem); line-height: .95; letter-spacing: -.03em;
+    font-size: clamp(1.7rem, 7vw, 2.1rem); line-height: 1; letter-spacing: -.03em;
   }
   .marca span { color: var(--acento); }
-  .sub-marca { font-size: .45em; letter-spacing: .02em; }
+  .sub-marca {
+    display: block; font-family: "Inter", sans-serif; font-weight: 500;
+    font-size: .9rem; letter-spacing: 0; color: var(--suave); margin-top: .3rem;
+  }
   .lema { color: var(--suave); margin-top: .5rem; }
 
   .reproductor {
     width: 100%; max-width: 30rem;
     background: var(--tarjeta); border: 1px solid var(--borde);
     border-radius: 1.5rem; padding: 1.5rem;
-    box-shadow: 0 1.25rem 2.5rem #0f172a14;
+    box-shadow: 0 1.25rem 2.5rem var(--sombra);
   }
   .estado {
     display: inline-flex; align-items: center; gap: .45rem;
@@ -131,8 +173,17 @@
   .es-ios input[type=range] { display: none; }   /* iPhone no deja cambiar el volumen desde la web */
 
   .aviso { min-height: 1.2rem; margin-top: 1rem; font-size: .85rem; color: var(--suave); }
-  .aviso.error { color: var(--error); }
-  .aviso.error::before { content: "⚠ "; }
+
+  .compartir {
+    margin-left: .25rem; height: 2.4rem; padding: 0 .9rem; border-radius: 1.2rem;
+    border: 1px solid var(--borde); background: transparent; color: var(--texto);
+    font: 500 .85rem "Inter", sans-serif; cursor: pointer;
+    display: inline-flex; align-items: center; gap: .4rem;
+  }
+  .compartir:hover { background: var(--borde); }
+  .compartir:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+  .compartir svg { width: 1.05rem; height: 1.05rem; fill: currentColor; }
+  @media (max-width: 26rem) { .compartir span { display: none; } .compartir { padding: 0 .6rem; } }
 
   .historial { width: 100%; max-width: 30rem; margin-top: 2rem; }
   .historial h2 {
@@ -141,10 +192,15 @@
   }
   .historial ol { list-style: none; padding: 0; }
   .historial li {
-    padding: .7rem 0; border-bottom: 1px solid var(--borde);
-    display: flex; gap: .75rem; align-items: baseline;
+    padding: .6rem 0; border-bottom: 1px solid var(--borde);
+    display: flex; gap: .75rem; align-items: center;
   }
-  .historial li b { font-weight: 500; }
+  .mini {
+    width: 2.75rem; height: 2.75rem; flex: none; border-radius: .6rem; object-fit: cover;
+    background: linear-gradient(135deg, var(--acento), var(--acento-2));
+  }
+  .historial li div { min-width: 0; }
+  .historial li b { font-weight: 500; display: block; overflow-wrap: anywhere; }
   .historial li small { color: var(--suave); }
   .historial .vacio { color: var(--suave); border: 0; }
 
@@ -158,8 +214,9 @@
 <body>
 
 <header>
-  <!-- ====== CAMBIÁ ACÁ EL NOMBRE Y EL LEMA ====== -->
-  <h1 class="marca">Radio<br><span>Pop</span><br><small class="sub-marca">en Español</small></h1>
+  <img class="logo" src="img/icono-192.png" alt="" width="52" height="52">
+  <!-- ====== CAMBIÁ ACÁ EL NOMBRE ====== -->
+  <h1 class="marca">Radio <span>Pop</span><small class="sub-marca">en Español · las 24 horas</small></h1>
 </header>
 
 <main class="reproductor" id="reproductor">
@@ -198,6 +255,10 @@
       </button>
       <input type="range" id="volumen" min="0" max="1" step="0.01" value="0.8" aria-label="Volumen">
     </div>
+    <button class="compartir" id="compartir" aria-label="Compartir la radio">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16a3 3 0 0 0-2.4 1.2l-6.7-3.4a3 3 0 0 0 0-1.6l6.7-3.4A3 3 0 1 0 15 7l-6.7 3.4a3 3 0 1 0 0 3.2L15 17a3 3 0 1 0 3-1z"/></svg>
+      <span>Compartir</span>
+    </button>
   </div>
 
   <p class="aviso" id="aviso" role="status"></p>
@@ -219,7 +280,7 @@
   const RADIO = "https://radio-render-ey3i.onrender.com";   // tu radio en Render
   const STREAM = RADIO + "/stream";
   const AHORA = RADIO + "/ahora";                           // tema actual e historial
-  const CALIDAD = "MP3 alta calidad";   // cambialo acá si cambiás el formato en radio.liq
+  const CALIDAD = "MP3 alta calidad";   // cambialo acá si cambiás el formato en lista.py
   const RETRASO = 0;    // segundos que el oyente escucha atrasado (0 = en vivo)
   const JAMENDO_ID = "9e34a0cf";   // para saber cuánto dura cada canción
 
@@ -301,8 +362,8 @@
     const espera = Math.min(30, 2 ** reintentos);
     ponerBoton("cargando");
     decir(reintentos > 3
-      ? "La radio no responde. Sigo intentando cada " + espera + " s…"
-      : "Reconectando…", reintentos > 3);
+      ? "La radio está volviendo, un momento… (reintento cada " + espera + " s)"
+      : "Reconectando…");
     clearTimeout(temporizador);
     temporizador = setTimeout(conectar, espera * 1000);
   }
@@ -350,6 +411,18 @@
 
   document.getElementById("calidad").textContent = "Calidad: " + CALIDAD;
 
+  // Compartir: en el celular abre WhatsApp, Instagram, etc.; en la PC copia el enlace
+  document.getElementById("compartir").addEventListener("click", async () => {
+    const datos = { title: NOMBRE, text: "Escuchá " + NOMBRE + ", pop en español las 24 horas 🎶",
+                    url: location.origin + location.pathname };
+    try {
+      if (navigator.share) { await navigator.share(datos); return; }
+      await navigator.clipboard.writeText(datos.url);
+      decir("Enlace copiado. ¡Pegalo donde quieras compartirlo!");
+      setTimeout(() => { if (aviso.textContent.startsWith("Enlace copiado")) decir(""); }, 4000);
+    } catch (e) { /* el oyente cerró el menú de compartir */ }
+  });
+
   // ====== QUÉ ESTÁ SONANDO (datos de Centova) ======
   const historial = [];
   let actual = "";
@@ -372,7 +445,7 @@
       .then(j => {
         mostrar(j); usarHistorial({ data: [j.historial || []] });
         const o = document.getElementById("oyentes");
-        o.hidden = typeof j.oyentes !== "number";
+        o.hidden = typeof j.oyentes !== "number" || j.oyentes < 1;   // con 0 no se muestra
         if (!o.hidden) o.textContent = textoOyentes(j.oyentes);
       })
       .catch(() => {});
@@ -467,16 +540,16 @@
     temaPestana = artista ? titulo + " – " + artista : titulo;
     actualizarPestana();
 
-    const img = document.getElementById("tapa");
-    const url = pista.imageurl;
-    const tapaOk = url && !/nocover/i.test(url);
-    if (tapaOk) { img.src = url; img.style.display = "block"; }
-    else { img.style.display = "none"; }
-    datosBloqueo(titulo, artista, tapaOk ? url : "");
-
     const clave = artista + "|" + titulo;
     actual = clave;
     if (historial[0] !== clave) {
+      // tapa del disco: la manda la radio; si no viene, se busca en Jamendo
+      const img = document.getElementById("tapa");
+      const url = pista.imageurl;
+      const tapaOk = url && !/nocover/i.test(url);
+      if (tapaOk) { img.src = url; img.style.display = "block"; }
+      else { img.removeAttribute("src"); img.style.display = "none"; }
+      datosBloqueo(titulo, artista, tapaOk ? url : "");
       inicio = primera ? null : Date.now();   // se corrige con la hora exacta del historial
       primera = false;
       buscarDuracion(artista, titulo);
@@ -522,7 +595,7 @@
     const vacio = t => !t || /^(unknown|desconocido|n\/a|-+)$/i.test(String(t).trim());
     if (vacio(titulo)) return null;
     if (vacio(artista)) artista = "";
-    return { artista, titulo, hora };
+    return { artista, titulo, hora, tapa: item.image || "" };
   }
 
   function buscarLista(x) {
@@ -557,7 +630,10 @@
     lista.innerHTML = "";
     temas.slice(1, 6).forEach(t => {
       const li = document.createElement("li");
-      li.innerHTML = "<b></b><small></small>";
+      li.innerHTML = '<img class="mini" alt="" loading="lazy"><div><b></b><small></small></div>';
+      const mini = li.querySelector("img");
+      if (t.tapa) mini.src = t.tapa; else mini.removeAttribute("src");
+      mini.onerror = () => mini.removeAttribute("src");
       li.querySelector("b").textContent = t.titulo;
       li.querySelector("small").textContent = [t.artista, haceCuanto(t.hora)].filter(Boolean).join(" · ");
       lista.appendChild(li);
