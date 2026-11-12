@@ -133,7 +133,7 @@
     </div>
     <div>
       <p class="nombre" id="nombre">Radio Oldies</p>
-      <p class="detalle" id="detalle">Buscando la radio de éxitos de los 70 y 80 más votada…</p>
+      <p class="detalle" id="detalle">Buscando la radio de ABBA…</p>
     </div>
   </div>
 
@@ -194,7 +194,10 @@
   // ====== BUSCAR LA RADIO MÁS VOTADA ======
   // Busca, en este orden, la radio más votada que pase éxitos de los 70 y 80:
   // 1) etiquetas "70s" y "80s" juntas, 2) "oldies" + "80s", 3) "oldies" + "70s", 4) cualquier "oldies".
+  // Primero: la radio de ABBA más votada. Si no aparece, las de éxitos de los 70 y 80.
+  const RADIO_PREFERIDA = "abba";
   const BUSQUEDAS = [
+    { name: "ABBA" },
     { tagList: "70s,80s" },
     { tagList: "oldies,80s" },
     { tagList: "oldies,70s" },
@@ -202,8 +205,10 @@
   ];
   // descarta radios centradas en décadas posteriores (90, 2000…)
   const DECADAS_NUEVAS = /(^|[^0-9])(19)?90'?s|(^|[^0-9])(20)?(00|10|20)'?s|2000s|2010s/i;
+  const normal = t => String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   const sirve = (e, filtro) => (e.url_resolved || "").startsWith("https://") &&
-    !DECADAS_NUEVAS.test(e.tags || "");
+    (filtro.name ? normal(e.name).split(" ").includes(RADIO_PREFERIDA)   // "ABBA" como palabra
+                 : !DECADAS_NUEVAS.test(e.tags || ""));
 
   async function buscarRadio() {
     for (const filtro of BUSQUEDAS) {
@@ -231,4 +236,113 @@
     document.getElementById("detalle").textContent = partes.filter(Boolean).join(" · ");
     const logo = document.getElementById("logo");
     if (e.favicon && e.favicon.startsWith("https://")) {
-      logo
+      logo.onload = () => { logo.style.display = "block"; };
+      logo.onerror = () => { logo.style.display = "none"; };
+      logo.src = e.favicon;
+    }
+    if (e.homepage) {
+      const a = document.createElement("a");
+      a.href = e.homepage; a.target = "_blank"; a.rel = "noopener";
+      a.textContent = "Sitio de la emisora";
+      document.getElementById("web").append(" ", a, ".");
+    }
+    document.getElementById("estado").textContent = "En vivo";
+    boton.disabled = false;
+    document.title = e.name.trim() + " | " + NOMBRE;
+    if ("mediaSession" in navigator && window.MediaMetadata) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: e.name.trim(), artist: "Éxitos de los 70 y 80", album: NOMBRE,
+        artwork: e.favicon && e.favicon.startsWith("https://") ? [{ src: e.favicon }] : []
+      });
+    }
+  }
+
+  // ====== REPRODUCTOR ======
+  function ponerBoton(modo) {
+    boton.classList.toggle("cargando", modo === "cargando");
+    boton.setAttribute("aria-busy", modo === "cargando");
+    icono.innerHTML = modo === "sonando" ? PAUSA : PLAY;
+    boton.setAttribute("aria-label", modo === "detenido" ? "Escuchar" : "Pausar");
+    caja.classList.toggle("sonando", modo === "sonando");
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.playbackState = modo === "detenido" ? "paused" : "playing";
+    }
+    if (radio) document.title = (modo === "sonando" ? "▶ " : "") + radio.name.trim() + " | " + NOMBRE;
+  }
+
+  function conectar() {
+    clearTimeout(temporizador);
+    ponerBoton("cargando");
+    audio.src = radio.url_resolved;
+    audio.play().then(() => {
+      reintentos = 0; decir(""); ponerBoton("sonando");
+    }).catch(err => {
+      if (err && err.name === "NotAllowedError") {
+        quiereEscuchar = false; ponerBoton("detenido"); decir("Tocá play para escuchar.");
+      } else reintentar();
+    });
+  }
+
+  function detener() {
+    quiereEscuchar = false;
+    clearTimeout(temporizador);
+    audio.pause();
+    audio.removeAttribute("src");
+    audio.load();
+    decir("");
+    ponerBoton("detenido");
+  }
+
+  function reintentar() {
+    if (!quiereEscuchar) return;
+    reintentos++;
+    const espera = Math.min(30, 2 ** reintentos);
+    ponerBoton("cargando");
+    decir(reintentos > 3 ? "La radio no responde. Sigo intentando cada " + espera + " s…"
+                         : "Reconectando…", reintentos > 3);
+    clearTimeout(temporizador);
+    temporizador = setTimeout(conectar, espera * 1000);
+  }
+
+  boton.addEventListener("click", () => {
+    if (!radio) return;
+    if (quiereEscuchar) { detener(); return; }
+    quiereEscuchar = true; reintentos = 0; decir("Conectando…"); conectar();
+    // cuenta la escucha en el directorio, como pide Radio Browser
+    fetch(servidor + "/json/url/" + radio.stationuuid).catch(() => {});
+  });
+  audio.addEventListener("error", () => { if (quiereEscuchar && audio.getAttribute("src")) reintentar(); });
+  audio.addEventListener("ended", () => { if (quiereEscuchar) reintentar(); });
+  audio.addEventListener("waiting", () => { if (quiereEscuchar) ponerBoton("cargando"); });
+  audio.addEventListener("playing", () => { reintentos = 0; decir(""); ponerBoton("sonando"); });
+
+  if ("mediaSession" in navigator) {
+    navigator.mediaSession.setActionHandler("play", () => { if (!quiereEscuchar) boton.click(); });
+    navigator.mediaSession.setActionHandler("pause", () => { if (quiereEscuchar) detener(); });
+    navigator.mediaSession.setActionHandler("stop", () => detener());
+  }
+
+  // volumen y silencio (en iPhone solo silencio)
+  if (/iPad|iPhone|iPod/.test(navigator.userAgent)) document.body.classList.add("es-ios");
+  audio.volume = 0.8;
+  document.getElementById("volumen").addEventListener("input", e => {
+    audio.volume = e.target.value; audio.muted = false; iconoVolumen();
+  });
+  document.getElementById("silencio").addEventListener("click", () => { audio.muted = !audio.muted; iconoVolumen(); });
+  function iconoVolumen() {
+    document.getElementById("icono-vol").innerHTML = audio.muted ? MUDO : VOL;
+    document.getElementById("silencio").setAttribute("aria-label", audio.muted ? "Activar sonido" : "Silenciar");
+  }
+
+  // ====== INICIO ======
+  buscarRadio().then(e => {
+    if (e) mostrarRadio(e);
+    else {
+      document.getElementById("estado").textContent = "Sin conexión";
+      document.getElementById("detalle").textContent = "No se pudo consultar el directorio de radios.";
+      decir("Probá recargar la página en un momento.", true);
+    }
+  });
+</script>
+</body>
+</html>
