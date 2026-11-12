@@ -54,6 +54,11 @@
     font-size: .8rem; font-weight: 500; letter-spacing: .08em; text-transform: uppercase;
     color: var(--suave);
   }
+  .cabecera { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+  .estacion {
+    font-size: .75rem; font-weight: 500; color: var(--suave);
+    border: 1px solid var(--borde); border-radius: 1rem; padding: .2rem .6rem; white-space: nowrap;
+  }
   .punto { width: .55rem; height: .55rem; border-radius: 50%; background: var(--suave); }
   .sonando .punto { background: var(--acento); animation: latido 1.4s ease-in-out infinite; }
   .sonando .estado { color: var(--acento); }
@@ -124,7 +129,10 @@
 </header>
 
 <main class="reproductor" id="reproductor">
-  <div class="estado"><span class="punto"></span><span id="estado">Buscando radio…</span></div>
+  <div class="cabecera">
+    <div class="estado"><span class="punto"></span><span id="estado">Buscando radio…</span></div>
+    <span class="estacion" id="estacion"></span>
+  </div>
 
   <div class="emisora">
     <div class="logo">
@@ -203,10 +211,12 @@
 
   function mostrarRadio(e) {
     radio = e;
+    // la emisora va en la etiqueta de arriba; el centro queda para el tema que suena
     document.getElementById("nombre").textContent = e.name.trim() || NOMBRE;
-    const partes = [e.country, e.codec && e.bitrate ? e.codec + " " + e.bitrate + " kbps" : e.codec,
-                    e.votes ? Number(e.votes).toLocaleString("es") + " votos" : ""];
-    document.getElementById("detalle").textContent = partes.filter(Boolean).join(" · ");
+    document.getElementById("detalle").textContent = "Esperando el nombre del tema…";
+    document.getElementById("estacion").textContent =
+      [e.name.trim(), e.codec && e.bitrate ? e.codec + " " + e.bitrate + " kbps" : e.codec]
+        .filter(Boolean).join(" · ");
     const logo = document.getElementById("logo");
     if (e.favicon && e.favicon.startsWith("https://")) {
       logo.onload = () => { logo.style.display = "block"; };
@@ -240,7 +250,10 @@
     if ("mediaSession" in navigator) {
       navigator.mediaSession.playbackState = modo === "detenido" ? "paused" : "playing";
     }
-    if (radio) document.title = (modo === "sonando" ? "▶ " : "") + radio.name.trim() + " | " + NOMBRE;
+    if (radio) {
+      const [art, tit] = temaMostrado ? temaMostrado.split("|") : ["", radio.name.trim()];
+      document.title = (modo === "sonando" ? "▶ " : "") + tit + (art ? " – " + art : "") + " | " + NOMBRE;
+    }
   }
 
   function conectar() {
@@ -308,8 +321,53 @@
   }
 
   // ====== INICIO ======
+  // ====== QUÉ SUENA (lo averigua tu servidor de Render) ======
+  const TEMA_ACTUAL = "https://radio-render-ey3i.onrender.com/oldies";
+  let temaMostrado = "";
+
+  function buscarTapa(artista, titulo) {
+    const q = new URLSearchParams({ term: artista + " " + titulo, entity: "song", limit: "1" });
+    fetch("https://itunes.apple.com/search?" + q)
+      .then(r => r.json())
+      .then(d => {
+        const t = d.results && d.results[0];
+        const logo = document.getElementById("logo");
+        if (t && t.artworkUrl100) {
+          const tapa = t.artworkUrl100.replace("100x100", "300x300");
+          logo.onload = () => { logo.style.display = "block"; };
+          logo.src = tapa;
+          if ("mediaSession" in navigator && window.MediaMetadata) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+              title: titulo, artist: artista, album: NOMBRE, artwork: [{ src: tapa, sizes: "300x300" }]
+            });
+          }
+        }
+      })
+      .catch(() => {});
+  }
+
+  function pedirTema() {
+    fetch(TEMA_ACTUAL, { cache: "no-store" })
+      .then(r => r.json())
+      .then(t => {
+        if (!t.title) return;
+        const clave = t.artist + "|" + t.title;
+        if (clave === temaMostrado) return;
+        temaMostrado = clave;
+        document.getElementById("nombre").textContent = t.title;
+        document.getElementById("detalle").textContent = t.artist || "";
+        const enVivo = caja.classList.contains("sonando");
+        document.title = (enVivo ? "▶ " : "") + t.title + (t.artist ? " – " + t.artist : "") + " | " + NOMBRE;
+        if ("mediaSession" in navigator && window.MediaMetadata) {
+          navigator.mediaSession.metadata = new MediaMetadata({ title: t.title, artist: t.artist, album: NOMBRE });
+        }
+        buscarTapa(t.artist, t.title);
+      })
+      .catch(() => {});
+  }
+
   buscarRadio().then(e => {
-    if (e) mostrarRadio(e);
+    if (e) { mostrarRadio(e); pedirTema(); setInterval(pedirTema, 10000); }
     else {
       document.getElementById("estado").textContent = "Sin conexión";
       document.getElementById("detalle").textContent = "No se pudo cargar la radio.";
