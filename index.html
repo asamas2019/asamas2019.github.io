@@ -16,16 +16,16 @@
     --tarjeta: #ffffff;
     --texto: #1b1530;
     --suave: #6b6480;
-    --acento: #e0306c;
-    --acento-2: #f59e0b;
+    --acento: #2563eb;
+    --acento-2: #06b6d4;
     --borde: #ece7f2;
   }
   * { box-sizing: border-box; margin: 0; }
   body {
     min-height: 100vh;
     background:
-      radial-gradient(60rem 40rem at 85% -10%, #e0306c14, transparent 60%),
-      radial-gradient(50rem 35rem at -10% 110%, #f59e0b14, transparent 60%),
+      radial-gradient(60rem 40rem at 85% -10%, #2563eb14, transparent 60%),
+      radial-gradient(50rem 35rem at -10% 110%, #06b6d414, transparent 60%),
       var(--fondo);
     color: var(--texto);
     font-family: "Inter", system-ui, sans-serif;
@@ -71,13 +71,30 @@
   .artista { color: var(--suave); margin-top: .25rem; }
   .titulo, .artista { overflow-wrap: anywhere; }
 
+  .progreso { margin: -.25rem 0 1.5rem; }
+  .barra {
+    height: .4rem; border-radius: 1rem; background: var(--borde); overflow: hidden; position: relative;
+  }
+  .relleno {
+    position: absolute; inset: 0 auto 0 0; width: 0%;
+    background: linear-gradient(90deg, var(--acento), var(--acento-2));
+    border-radius: inherit; transition: width .9s linear;
+  }
+  .barra.incierta .relleno {
+    width: 30%; transition: none; animation: vaiven 2.4s ease-in-out infinite;
+  }
+  @keyframes vaiven { 0% { left: -30%; } 100% { left: 100%; } }
+  .tiempos {
+    display: flex; justify-content: space-between; margin-top: .4rem;
+    font-size: .8rem; color: var(--suave); font-variant-numeric: tabular-nums;
+  }
   .controles { display: flex; align-items: center; gap: 1rem; }
   .play {
     width: 4.25rem; height: 4.25rem; flex: none; border: 0; border-radius: 50%;
     background: var(--acento); color: #fff; cursor: pointer;
     display: grid; place-items: center;
     transition: transform .15s ease, box-shadow .15s ease;
-    box-shadow: 0 .6rem 1.5rem #e0306c4d;
+    box-shadow: 0 .6rem 1.5rem #2563eb4d;
   }
   .play:hover { transform: scale(1.05); }
   .play:active { transform: scale(.96); }
@@ -132,6 +149,12 @@
     </div>
   </div>
 
+  <div class="progreso">
+    <div class="barra incierta" id="barra" role="progressbar" aria-label="Avance de la canción"
+         aria-valuemin="0" aria-valuemax="100"><span class="relleno" id="relleno"></span></div>
+    <div class="tiempos"><span id="t-actual">--:--</span><span id="t-total">--:--</span></div>
+  </div>
+
   <div class="controles">
     <button class="play" id="play" aria-label="Escuchar">
       <svg id="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
@@ -162,6 +185,7 @@
   // ====== DATOS DE TU RADIO ======
   const STREAM = "https://usa3.fastcast4u.com/proxy/agstweb/stream";
   const INFO = "https://usa3.fastcast4u.com/rpc/agstweb/streaminfo.get";
+  const JAMENDO_ID = "9e34a0cf";   // para saber cuánto dura cada canción
 
   const audio = document.getElementById("audio");
   const boton = document.getElementById("play");
@@ -201,15 +225,61 @@
 
   // ====== QUÉ ESTÁ SONANDO (datos de Centova) ======
   const historial = [];
-  function pedirInfo() {
-    const nombre = "cb" + Date.now();
+  function jsonp(url, alRecibir) {
+    const nombre = "cb" + Date.now() + Math.floor(Math.random() * 1e6);
     const s = document.createElement("script");
-    window[nombre] = datos => { mostrar(datos); limpiar(); };
-    function limpiar() { delete window[nombre]; s.remove(); }
+    const limpiar = () => { delete window[nombre]; s.remove(); };
+    window[nombre] = datos => { alRecibir(datos); limpiar(); };
     s.onerror = limpiar;
-    s.src = INFO + "?callback=" + nombre;
+    s.src = url + (url.includes("?") ? "&" : "?") + "callback=" + nombre;
     document.body.appendChild(s);
   }
+  function pedirInfo() { jsonp(INFO, mostrar); }
+
+  // ====== BARRA DE PROGRESO ======
+  let inicio = null;      // cuándo empezó el tema (null = no se sabe)
+  let duracion = null;    // segundos, según Jamendo
+  let primera = true;     // el tema que ya sonaba al abrir la página
+
+  function reloj(seg) {
+    seg = Math.max(0, Math.floor(seg));
+    return Math.floor(seg / 60) + ":" + String(seg % 60).padStart(2, "0");
+  }
+
+  function buscarDuracion(artista, titulo) {
+    duracion = null;
+    const q = new URLSearchParams({
+      client_id: JAMENDO_ID, format: "json", limit: "5",
+      namesearch: titulo, type: "single albumtrack"
+    });
+    jsonp("https://api.jamendo.com/v3.0/tracks/?" + q, datos => {
+      const lista = (datos && datos.results) || [];
+      const a = artista.toLowerCase();
+      const igual = lista.find(t => (t.artist_name || "").toLowerCase() === a) || lista[0];
+      if (igual && igual.duration) duracion = Number(igual.duration);
+      pintarBarra();
+    });
+  }
+
+  function pintarBarra() {
+    const barra = document.getElementById("barra");
+    const relleno = document.getElementById("relleno");
+    document.getElementById("t-total").textContent = duracion ? reloj(duracion) : "--:--";
+    if (inicio && duracion) {
+      const pasado = (Date.now() - inicio) / 1000;
+      const pct = Math.min(100, pasado / duracion * 100);
+      barra.classList.remove("incierta");
+      relleno.style.width = pct + "%";
+      barra.setAttribute("aria-valuenow", Math.round(pct));
+      document.getElementById("t-actual").textContent = reloj(Math.min(pasado, duracion));
+    } else {
+      barra.classList.add("incierta");
+      relleno.style.width = "";
+      barra.removeAttribute("aria-valuenow");
+      document.getElementById("t-actual").textContent = "--:--";
+    }
+  }
+  setInterval(pintarBarra, 1000);
 
   function mostrar(datos) {
     const d = datos && datos.data && datos.data[0];
@@ -235,6 +305,9 @@
 
     const clave = artista + "|" + titulo;
     if (historial[0] !== clave) {
+      inicio = primera ? null : Date.now();   // el primer tema no se sabe cuándo empezó
+      primera = false;
+      buscarDuracion(artista, titulo);
       historial.unshift(clave);
       historial.length = Math.min(historial.length, 6);
       const lista = document.getElementById("lista");
@@ -252,7 +325,7 @@
   }
 
   pedirInfo();
-  setInterval(pedirInfo, 15000);
+  setInterval(pedirInfo, 5000);
 </script>
 </body>
 </html>
