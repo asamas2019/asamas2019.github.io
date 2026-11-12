@@ -133,7 +133,7 @@
     </div>
     <div>
       <p class="nombre" id="nombre">Radio Éxitos de los 80</p>
-      <p class="detalle" id="detalle">Buscando radios de 80 hits…</p>
+      <p class="detalle" id="detalle">Conectando con Oxygen The 80s Hits…</p>
     </div>
   </div>
 
@@ -192,18 +192,20 @@
   }
 
   // ====== BUSCAR LA RADIO MÁS VOTADA ======
-  // Busca radios de "80 hits", en este orden, y se queda con la más votada que encuentre:
-  // 1) etiquetas "80s" + "hits", 2) "80s hits" en el nombre, 3) "80 hits" en el nombre,
-  // 4) si no hay ninguna, la radio "80s" más votada.
+  // Radio fija: siempre "Oxygen The 80s Hits".
+  // Solo si el directorio no la devuelve (por ejemplo, si cambia de nombre o deja de transmitir),
+  // usa la radio "80s" más votada para que la página no quede muda.
+  const RADIO_ELEGIDA = "Oxygen The 80s Hits";
   const BUSQUEDAS = [
-    { tagList: "80s,hits" },
-    { name: "80s hits" },
-    { name: "80 hits" },
+    { name: "Oxygen" },                    // trae todas las "Oxygen…" y se elige la de los 80
     { tag: ETIQUETA, tagExact: "true" }
   ];
   // solo radios de los 80: descarta las que también se etiquetan con otras décadas
   const OTRAS_DECADAS = /(^|[^0-9])(19)?(50|60|70|90)'?s|(^|[^0-9])(20)?(00|10|20)'?s|2000s|2010s|oldies|todas las d[eé]cadas/i;
-  const sirve = e => (e.url_resolved || "").startsWith("https://") && !OTRAS_DECADAS.test(e.tags || "");
+  const normal = t => String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const esLaElegida = e => normal(e.name).includes(normal(RADIO_ELEGIDA));   // ignora guiones y mayúsculas
+  const sirve = (e, filtro) => (e.url_resolved || "").startsWith("https://") &&
+    (filtro.name ? esLaElegida(e) : !OTRAS_DECADAS.test(e.tags || ""));
 
   async function buscarRadio() {
     for (const filtro of BUSQUEDAS) {
@@ -214,7 +216,7 @@
         try {
           const r = await fetch(s + "/json/stations/search?" + q);
           if (!r.ok) continue;
-          const elegida = (await r.json()).find(sirve);
+          const elegida = (await r.json()).find(e => sirve(e, filtro));
           if (elegida) { servidor = s; return elegida; }
           break;   // respondió pero sin resultados útiles: pasa a la búsqueda siguiente
         } catch (e) { /* servidor caído: prueba el siguiente */ }
