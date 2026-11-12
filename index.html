@@ -246,19 +246,31 @@
     return Math.floor(seg / 60) + ":" + String(seg % 60).padStart(2, "0");
   }
 
+  function normal(txt) {
+    return String(txt || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, " ").trim();
+  }
+
   function buscarDuracion(artista, titulo) {
     duracion = null;
-    const q = new URLSearchParams({
-      client_id: JAMENDO_ID, format: "json", limit: "5",
-      namesearch: titulo, type: "single albumtrack"
-    });
-    jsonp("https://api.jamendo.com/v3.0/tracks/?" + q, datos => {
-      const lista = (datos && datos.results) || [];
-      const a = artista.toLowerCase();
-      const igual = lista.find(t => (t.artist_name || "").toLowerCase() === a) || lista[0];
-      if (igual && igual.duration) duracion = Number(igual.duration);
-      pintarBarra();
-    });
+    const quien = normal(artista), que = normal(titulo);
+    const elegir = lista => {
+      const mismos = lista.filter(t => normal(t.name) === que);
+      return mismos.find(t => normal(t.artist_name) === quien) || mismos[0] ||
+             lista.find(t => normal(t.artist_name) === quien) || null;
+    };
+    const pedir = (extra, siFalla) => {
+      const q = new URLSearchParams(Object.assign({
+        client_id: JAMENDO_ID, format: "json", limit: "10", type: "single albumtrack"
+      }, extra));
+      jsonp("https://api.jamendo.com/v3.0/tracks/?" + q, datos => {
+        const tema = elegir((datos && datos.results) || []);
+        if (tema && tema.duration) { duracion = Number(tema.duration); pintarBarra(); }
+        else if (siFalla) siFalla();
+      });
+    };
+    // 1º por título exacto; 2º búsqueda libre con artista y título
+    pedir({ namesearch: titulo }, () => pedir({ search: artista + " " + titulo }));
   }
 
   function pintarBarra() {
@@ -276,7 +288,9 @@
       barra.classList.add("incierta");
       relleno.style.width = "";
       barra.removeAttribute("aria-valuenow");
-      document.getElementById("t-actual").textContent = "--:--";
+      // si se sabe cuándo empezó pero no cuánto dura, igual muestra el tiempo que va
+      document.getElementById("t-actual").textContent =
+        inicio ? reloj((Date.now() - inicio) / 1000) : "--:--";
     }
   }
   setInterval(pintarBarra, 1000);
