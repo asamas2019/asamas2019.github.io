@@ -53,11 +53,6 @@
     color: var(--suave);
   }
   .cabecera { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
-  .calidad {
-    font-size: .75rem; font-weight: 500; color: var(--suave);
-    border: 1px solid var(--borde); border-radius: 1rem; padding: .2rem .6rem;
-    font-variant-numeric: tabular-nums; white-space: nowrap;
-  }
   .punto { width: .55rem; height: .55rem; border-radius: 50%; background: var(--suave); }
   .sonando .punto { background: var(--acento); animation: latido 1.4s ease-in-out infinite; }
   .sonando .estado { color: var(--acento); }
@@ -165,7 +160,6 @@
 <main class="reproductor" id="reproductor">
   <div class="cabecera">
     <div class="estado"><span class="punto"></span><span id="estado">En vivo</span></div>
-    <span class="calidad" id="calidad" title="Códec MP3, tasa constante (CBR), 96 kbps">Calidad: MP3 96 kbps</span>
   </div>
 
   <div class="tema">
@@ -428,17 +422,6 @@
       const partes = String(d.song).split(" - ");
       artista = partes.length > 1 ? partes.shift() : "";
       titulo = partes.join(" - ");
-    }
-    // calidad de audio, si el servidor la informa
-    const kbps = parseInt(d.bitrate, 10);
-    if (kbps > 0) {
-      const pista = String(d.format || d.mimetype || d.codec || "");
-      const formato = /aac/i.test(pista) ? "AAC"
-                    : /ogg|opus/i.test(pista) ? "Opus" : "MP3";   // tu radio usa MP3
-      const nombreFormato = formato === "AAC" ? "FDK-AAC" : formato === "Opus" ? "Ogg/Opus" : "MP3";
-      const etiqueta = document.getElementById("calidad");
-      etiqueta.textContent = "Calidad: " + formato + " " + kbps + " kbps";
-      etiqueta.title = "Códec " + nombreFormato + ", tasa constante (CBR), " + kbps + " kbps";
     }
     const caida = /offline|unavailable|fuera del aire/i.test(String(d.song || "") + " " + titulo)
                || (d.server !== undefined && d.server !== "Online");
