@@ -133,7 +133,7 @@
     </div>
     <div>
       <p class="nombre" id="nombre">Radio Éxitos de los 80</p>
-      <p class="detalle" id="detalle">Buscando la radio de los 80 más votada…</p>
+      <p class="detalle" id="detalle">Buscando la radio de éxitos de los 80 más votada…</p>
     </div>
   </div>
 
@@ -192,20 +192,30 @@
   }
 
   // ====== BUSCAR LA RADIO MÁS VOTADA ======
+  // Busca en este orden y se queda con la primera radio más votada que encuentre:
+  // 1) etiquetas "80s" y "hits" juntas, 2) "80s hits" en el nombre, 3) cualquier radio "80s".
+  const BUSQUEDAS = [
+    { tagList: "80s,hits" },
+    { name: "80s hits" },
+    { tag: ETIQUETA, tagExact: "true" }
+  ];
+
   async function buscarRadio() {
-    const q = new URLSearchParams({
-      tag: ETIQUETA, tagExact: "true", order: "votes", reverse: "true",
-      hidebroken: "true", is_https: "true", limit: "10"
-    });
-    for (const s of SERVIDORES) {
-      try {
-        const r = await fetch(s + "/json/stations/search?" + q);
-        if (!r.ok) continue;
-        const lista = await r.json();
-        // la más votada con transmisión segura (https), que es la que los navegadores dejan sonar
-        const elegida = lista.find(e => (e.url_resolved || "").startsWith("https://"));
-        if (elegida) { servidor = s; return elegida; }
-      } catch (e) { /* prueba el siguiente servidor */ }
+    for (const filtro of BUSQUEDAS) {
+      const q = new URLSearchParams(Object.assign({
+        order: "votes", reverse: "true", hidebroken: "true", is_https: "true", limit: "10"
+      }, filtro));
+      for (const s of SERVIDORES) {
+        try {
+          const r = await fetch(s + "/json/stations/search?" + q);
+          if (!r.ok) continue;
+          const lista = await r.json();
+          // transmisión segura (https), que es la que los navegadores dejan sonar
+          const elegida = lista.find(e => (e.url_resolved || "").startsWith("https://"));
+          if (elegida) { servidor = s; return elegida; }
+          break;   // el servidor respondió pero sin resultados: pasa a la búsqueda siguiente
+        } catch (e) { /* servidor caído: prueba el siguiente */ }
+      }
     }
     return null;
   }
