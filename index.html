@@ -393,7 +393,7 @@
   }
 
   function buscarDuracion(artista, titulo) {
-    duracion = null;
+    duracion = null;   // se completa enseguida con el dato de la radio (o de Jamendo)
     const quien = normal(artista), que = normal(titulo);
     const elegir = lista => {
       const mismos = lista.filter(t => normal(t.name) === que);
@@ -406,7 +406,8 @@
       }, extra));
       jsonp("https://api.jamendo.com/v3.0/tracks/?" + q, datos => {
         const tema = elegir((datos && datos.results) || []);
-        if (tema && tema.duration) { duracion = Number(tema.duration); pintarBarra(); }
+        // la radio ya manda la duración; Jamendo queda solo como respaldo
+        if (!duracion && tema && tema.duration) { duracion = Number(tema.duration); pintarBarra(); }
         // tapa del disco desde Jamendo, si la radio no mandó una
         const img = document.getElementById("tapa");
         if (tema && tema.image && img.style.display !== "block") {
@@ -494,6 +495,14 @@
       });
       if (!lista.children.length) lista.innerHTML = '<li class="vacio">Todavía no hay datos.</li>';
     }
+    tiemposDelServidor(pista);
+  }
+
+  // La radio manda cuánto dura el tema y a qué hora empezó: la barra queda exacta
+  function tiemposDelServidor(pista) {
+    if (Number(pista.duration) > 0) duracion = Number(pista.duration);
+    if (Number(pista.start) > 0) inicio = Number(pista.start) * 1000;
+    pintarBarra();
   }
 
   // ====== HISTORIAL DE LA RADIO (el mismo para todos) ======
