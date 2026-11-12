@@ -165,7 +165,7 @@
 <main class="reproductor" id="reproductor">
   <div class="cabecera">
     <div class="estado"><span class="punto"></span><span id="estado">En vivo</span></div>
-    <span class="calidad" id="calidad" title="Códec FDK-AAC, tasa constante (CBR), 96 kbps">Calidad: AAC 96 kbps</span>
+    <span class="calidad" id="calidad" title="Códec MP3, tasa constante (CBR), 96 kbps">Calidad: MP3 96 kbps</span>
   </div>
 
   <div class="tema">
@@ -433,8 +433,8 @@
     const kbps = parseInt(d.bitrate, 10);
     if (kbps > 0) {
       const pista = String(d.format || d.mimetype || d.codec || "");
-      const formato = /mpeg|mp3/i.test(pista) ? "MP3"
-                    : /ogg|opus/i.test(pista) ? "Opus" : "AAC";   // tu radio usa FDK-AAC
+      const formato = /aac/i.test(pista) ? "AAC"
+                    : /ogg|opus/i.test(pista) ? "Opus" : "MP3";   // tu radio usa MP3
       const nombreFormato = formato === "AAC" ? "FDK-AAC" : formato === "Opus" ? "Ogg/Opus" : "MP3";
       const etiqueta = document.getElementById("calidad");
       etiqueta.textContent = "Calidad: " + formato + " " + kbps + " kbps";
