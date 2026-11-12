@@ -84,10 +84,8 @@
     background: linear-gradient(90deg, var(--acento), var(--acento-2));
     border-radius: inherit; transition: width .9s linear;
   }
-  .barra.incierta .relleno {
-    width: 30%; transition: none; animation: vaiven 2.4s ease-in-out infinite;
-  }
-  @keyframes vaiven { 0% { left: -30%; } 100% { left: 100%; } }
+  .barra.incierta .relleno { width: 0%; transition: none; }
+  .progreso[hidden] { display: none; }
   .tiempos {
     display: flex; justify-content: space-between; margin-top: .4rem;
     font-size: .8rem; color: var(--suave); font-variant-numeric: tabular-nums;
@@ -111,7 +109,7 @@
   }
   @keyframes girar { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) {
-    .play.cargando::after, .sonando .punto, .barra.incierta .relleno { animation-duration: 3s; }
+    .play.cargando::after, .sonando .punto { animation-duration: 3s; }
   }
   .volumen { margin-left: auto; display: flex; align-items: center; gap: .4rem; color: var(--suave); }
   .silencio {
@@ -173,7 +171,7 @@
     </div>
   </div>
 
-  <div class="progreso">
+  <div class="progreso" id="progreso" hidden>
     <div class="barra incierta" id="barra" role="progressbar" aria-label="Avance de la canción"
          aria-valuemin="0" aria-valuemax="100"><span class="relleno" id="relleno"></span></div>
     <div class="tiempos"><span id="t-actual">--:--</span><span id="t-total">--:--</span></div>
@@ -406,6 +404,8 @@
   function pintarBarra() {
     const barra = document.getElementById("barra");
     const relleno = document.getElementById("relleno");
+    // sin tema conocido no hay nada que medir: la barra se oculta
+    document.getElementById("progreso").hidden = !actual;
     document.getElementById("t-total").textContent = duracion ? reloj(duracion) : "--:--";
     if (inicio && duracion) {
       const pasado = (Date.now() - inicio) / 1000;
@@ -438,7 +438,7 @@
     const caida = /offline|unavailable|fuera del aire/i.test(String(d.song || "") + " " + titulo)
                || (d.server !== undefined && d.server !== "Online");
     ponerAire(!caida);
-    if (caida) { temaPestana = ""; actualizarPestana(); return; }
+    if (caida) { temaPestana = ""; actual = ""; actualizarPestana(); pintarBarra(); return; }
     if (!titulo) return;
     titulo = titulo.replace(/^\d+ - /, "");   // saca el número de Jamendo del nombre
     document.getElementById("titulo").textContent = titulo;
