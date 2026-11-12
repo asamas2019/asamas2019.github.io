@@ -644,8 +644,10 @@
 
   function pedirHistorial() { pedirInfo(); }
 
+  // Pregunta cada 10 s; si la pestaña está escondida, no pregunta (ahorra servidor y batería)
   pedirInfo();
-  setInterval(pedirInfo, 5000);
+  setInterval(() => { if (!document.hidden) pedirInfo(); }, 10000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) pedirInfo(); });
 </script>
 </body>
 </html>
