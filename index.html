@@ -323,9 +323,10 @@
     const clave = artista + "|" + titulo;
     actual = clave;
     if (historial[0] !== clave) {
-      inicio = primera ? null : Date.now();   // el primer tema no se sabe cuándo empezó
+      inicio = primera ? null : Date.now();   // se corrige con la hora exacta del historial
       primera = false;
       buscarDuracion(artista, titulo);
+      setTimeout(pedirHistorial, 1500);
       historial.unshift(clave);
       historial.length = Math.min(historial.length, 6);
       if (historialDelServidor) { pedirHistorial(); return; }
@@ -354,7 +355,8 @@
       titulo = partes.join(" - ");
     }
     titulo = String(titulo).replace(/^\d+ - /, "");
-    return titulo ? { artista, titulo } : null;
+    const hora = Number(item.time) || 0;   // segundos desde 1970: cuándo empezó a sonar
+    return titulo ? { artista, titulo, hora } : null;
   }
 
   function buscarLista(x) {
@@ -368,22 +370,45 @@
     return null;
   }
 
-  function pedirHistorial() {
-    jsonp(RECIENTES, datos => {
-      const temas = (buscarLista(datos && datos.data) || []).map(separar).filter(Boolean);
-      if (!temas.length) return;
-      historialDelServidor = true;
-      const lista = document.getElementById("lista");
-      lista.innerHTML = "";
-      temas.filter(t => t.artista + "|" + t.titulo !== actual).slice(0, 5).forEach(t => {
-        const li = document.createElement("li");
-        li.innerHTML = "<b></b><small></small>";
-        li.querySelector("b").textContent = t.titulo;
-        li.querySelector("small").textContent = t.artista;
-        lista.appendChild(li);
-      });
-      if (!lista.children.length) lista.innerHTML = '<li class="vacio">Todavía no hay datos.</li>';
+  function haceCuanto(hora) {
+    if (!hora) return "";
+    const min = Math.round((Date.now() / 1000 - hora) / 60);
+    return min < 1 ? "recién" : min < 60 ? "hace " + min + " min" : "hace " + Math.round(min / 60) + " h";
+  }
+
+  function usarHistorial(datos) {
+    const temas = (buscarLista(datos && datos.data) || []).map(separar).filter(Boolean);
+    if (!temas.length) return false;
+    historialDelServidor = true;
+
+    // el primero es el que suena ahora: su hora de inicio hace exacta la barra
+    const ahora = temas[0];
+    if (ahora.hora && normal(ahora.artista + " " + ahora.titulo) === normal(actual.replace("|", " "))) {
+      inicio = ahora.hora * 1000;
+    }
+
+    const lista = document.getElementById("lista");
+    lista.innerHTML = "";
+    temas.slice(1, 6).forEach(t => {
+      const li = document.createElement("li");
+      li.innerHTML = "<b></b><small></small>";
+      li.querySelector("b").textContent = t.titulo;
+      li.querySelector("small").textContent = [t.artista, haceCuanto(t.hora)].filter(Boolean).join(" · ");
+      lista.appendChild(li);
     });
+    if (!lista.children.length) lista.innerHTML = '<li class="vacio">Todavía no hay datos.</li>';
+    return true;
+  }
+
+  function pedirHistorial() {
+    let llego = false;
+    jsonp(RECIENTES, datos => { llego = true; usarHistorial(datos); });
+    // si el servidor no responde de esa forma, se pide como datos comunes
+    setTimeout(() => {
+      if (llego) return;
+      fetch(RECIENTES, { cache: "no-store" })
+        .then(r => r.json()).then(usarHistorial).catch(() => {});
+    }, 4000);
   }
 
   pedirInfo();
