@@ -220,7 +220,7 @@
   const STREAM = RADIO + "/stream";
   const AHORA = RADIO + "/ahora";                           // tema actual e historial
   const CALIDAD = "MP3 96 kbps";   // cambialo acá si cambiás el formato en radio.liq
-  const RETRASO = 20;   // segundos de colchón de audio (burst en radio.liq)
+  const RETRASO = 0;    // segundos que el oyente escucha atrasado (0 = en vivo)
   const JAMENDO_ID = "9e34a0cf";   // para saber cuánto dura cada canción
 
   const NOMBRE = "Radio Pop en Español";   // nombre que se ve en la pestaña y en el celular bloqueado
@@ -502,7 +502,6 @@
   // La radio manda cuánto dura el tema y a qué hora empezó: la barra queda exacta
   function tiemposDelServidor(pista) {
     if (Number(pista.duration) > 0) duracion = Number(pista.duration);
-    // + 20 s: el oyente escucha unos 20 segundos atrasado (el "colchón" de audio de la radio)
     if (Number(pista.start) > 0) inicio = Number(pista.start) * 1000 + RETRASO * 1000;
     pintarBarra();
   }
