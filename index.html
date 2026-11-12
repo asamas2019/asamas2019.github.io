@@ -185,6 +185,7 @@
   // ====== DATOS DE TU RADIO ======
   const STREAM = "https://usa3.fastcast4u.com/proxy/agstweb/stream";
   const INFO = "https://usa3.fastcast4u.com/rpc/agstweb/streaminfo.get";
+  const RECIENTES = "https://usa3.fastcast4u.com/rpc/agstweb/recenttracks.get";
   const JAMENDO_ID = "9e34a0cf";   // para saber cuánto dura cada canción
 
   const audio = document.getElementById("audio");
@@ -225,6 +226,8 @@
 
   // ====== QUÉ ESTÁ SONANDO (datos de Centova) ======
   const historial = [];
+  let actual = "";
+  let historialDelServidor = false;   // true cuando la radio entrega su propio historial
   function jsonp(url, alRecibir) {
     const nombre = "cb" + Date.now() + Math.floor(Math.random() * 1e6);
     const s = document.createElement("script");
@@ -318,12 +321,14 @@
     else { img.style.display = "none"; }
 
     const clave = artista + "|" + titulo;
+    actual = clave;
     if (historial[0] !== clave) {
       inicio = primera ? null : Date.now();   // el primer tema no se sabe cuándo empezó
       primera = false;
       buscarDuracion(artista, titulo);
       historial.unshift(clave);
       historial.length = Math.min(historial.length, 6);
+      if (historialDelServidor) { pedirHistorial(); return; }
       const lista = document.getElementById("lista");
       lista.innerHTML = "";
       historial.slice(1).forEach(item => {
@@ -338,8 +343,53 @@
     }
   }
 
+  // ====== HISTORIAL DE LA RADIO (el mismo para todos) ======
+  function separar(item) {
+    if (!item || typeof item !== "object") return null;
+    let artista = item.artist || (item.track && item.track.artist) || "";
+    let titulo = item.title || (item.track && item.track.title) || "";
+    if (!titulo && (item.song || item.name)) {
+      const partes = String(item.song || item.name).split(" - ");
+      artista = artista || (partes.length > 1 ? partes.shift() : "");
+      titulo = partes.join(" - ");
+    }
+    titulo = String(titulo).replace(/^\d+ - /, "");
+    return titulo ? { artista, titulo } : null;
+  }
+
+  function buscarLista(x) {
+    // Centova anida la lista de distintas formas: busca el primer arreglo de temas
+    if (Array.isArray(x)) {
+      if (x.some(i => separar(i))) return x;
+      for (const i of x) { const r = buscarLista(i); if (r) return r; }
+    } else if (x && typeof x === "object") {
+      for (const k of Object.keys(x)) { const r = buscarLista(x[k]); if (r) return r; }
+    }
+    return null;
+  }
+
+  function pedirHistorial() {
+    jsonp(RECIENTES, datos => {
+      const temas = (buscarLista(datos && datos.data) || []).map(separar).filter(Boolean);
+      if (!temas.length) return;
+      historialDelServidor = true;
+      const lista = document.getElementById("lista");
+      lista.innerHTML = "";
+      temas.filter(t => t.artista + "|" + t.titulo !== actual).slice(0, 5).forEach(t => {
+        const li = document.createElement("li");
+        li.innerHTML = "<b></b><small></small>";
+        li.querySelector("b").textContent = t.titulo;
+        li.querySelector("small").textContent = t.artista;
+        lista.appendChild(li);
+      });
+      if (!lista.children.length) lista.innerHTML = '<li class="vacio">Todavía no hay datos.</li>';
+    });
+  }
+
   pedirInfo();
+  pedirHistorial();
   setInterval(pedirInfo, 5000);
+  setInterval(pedirHistorial, 30000);
 </script>
 </body>
 </html>
