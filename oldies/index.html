@@ -153,7 +153,7 @@
 </main>
 
 <footer>
-  <p>La radio que suena es la de éxitos de los 70 y 80 más votada en
+  <p>La radio que suena es la de ABBA, del directorio
     <a href="https://www.radio-browser.info" target="_blank" rel="noopener">Radio Browser</a>,
     un directorio abierto de radios por internet. La música y la transmisión pertenecen a esa emisora.
     <span id="web"></span></p>
@@ -194,21 +194,14 @@
   // ====== BUSCAR LA RADIO MÁS VOTADA ======
   // Busca, en este orden, la radio más votada que pase éxitos de los 70 y 80:
   // 1) etiquetas "70s" y "80s" juntas, 2) "oldies" + "80s", 3) "oldies" + "70s", 4) cualquier "oldies".
-  // Primero: la radio de ABBA más votada. Si no aparece, las de éxitos de los 70 y 80.
+  // Siempre la radio de ABBA (si hay varias con ese nombre, la primera que funcione).
   const RADIO_PREFERIDA = "abba";
   const BUSQUEDAS = [
-    { name: "ABBA" },
-    { tagList: "70s,80s" },
-    { tagList: "oldies,80s" },
-    { tagList: "oldies,70s" },
-    { tag: ETIQUETA, tagExact: "true" }
+    { name: "ABBA" }
   ];
-  // descarta radios centradas en décadas posteriores (90, 2000…)
-  const DECADAS_NUEVAS = /(^|[^0-9])(19)?90'?s|(^|[^0-9])(20)?(00|10|20)'?s|2000s|2010s/i;
   const normal = t => String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   const sirve = (e, filtro) => (e.url_resolved || "").startsWith("https://") &&
-    (filtro.name ? normal(e.name).split(" ").includes(RADIO_PREFERIDA)   // "ABBA" como palabra
-                 : !DECADAS_NUEVAS.test(e.tags || ""));
+    normal(e.name).split(" ").includes(RADIO_PREFERIDA);   // "ABBA" como palabra
 
   async function buscarRadio() {
     for (const filtro of BUSQUEDAS) {
@@ -339,7 +332,7 @@
     if (e) mostrarRadio(e);
     else {
       document.getElementById("estado").textContent = "Sin conexión";
-      document.getElementById("detalle").textContent = "No se pudo consultar el directorio de radios.";
+      document.getElementById("detalle").textContent = "No se encontró la radio de ABBA.";
       decir("Probá recargar la página en un momento.", true);
     }
   });
