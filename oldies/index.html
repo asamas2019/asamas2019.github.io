@@ -55,6 +55,7 @@
     color: var(--suave);
   }
   .cabecera { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+  .estacion[hidden] { display: none; }
   .estacion {
     font-size: .75rem; font-weight: 500; color: var(--suave);
     border: 1px solid var(--borde); border-radius: 1rem; padding: .2rem .6rem; white-space: nowrap;
@@ -131,7 +132,7 @@
 <main class="reproductor" id="reproductor">
   <div class="cabecera">
     <div class="estado"><span class="punto"></span><span id="estado">Buscando radio…</span></div>
-    <span class="estacion" id="estacion"></span>
+    <span class="estacion" id="estacion" hidden></span>
   </div>
 
   <div class="emisora">
@@ -210,11 +211,8 @@
   function mostrarRadio(e) {
     radio = e;
     // la emisora va en la etiqueta de arriba; el centro queda para el tema que suena
-    document.getElementById("nombre").textContent = e.name.trim() || NOMBRE;
-    document.getElementById("detalle").textContent = "Esperando el nombre del tema…";
-    document.getElementById("estacion").textContent =
-      [e.name.trim(), e.codec && e.bitrate ? e.codec + " " + e.bitrate + " kbps" : e.codec]
-        .filter(Boolean).join(" · ");
+    document.getElementById("nombre").textContent = NOMBRE;
+    document.getElementById("detalle").textContent = "Tocá play para escuchar";
     const logo = document.getElementById("logo");
     if (e.favicon && e.favicon.startsWith("https://")) {
       logo.onload = () => { logo.style.display = "block"; };
@@ -229,10 +227,10 @@
     }
     document.getElementById("estado").textContent = "En vivo";
     boton.disabled = false;
-    document.title = e.name.trim() + " | " + NOMBRE;
+    document.title = NOMBRE;
     if ("mediaSession" in navigator && window.MediaMetadata) {
       navigator.mediaSession.metadata = new MediaMetadata({
-        title: e.name.trim(), artist: "Éxitos de los 70 y 80", album: NOMBRE,
+        title: NOMBRE, artist: "Éxitos de los 70 y 80", album: NOMBRE,
         artwork: e.favicon && e.favicon.startsWith("https://") ? [{ src: e.favicon }] : []
       });
     }
@@ -249,7 +247,7 @@
       navigator.mediaSession.playbackState = modo === "detenido" ? "paused" : "playing";
     }
     if (radio) {
-      const [art, tit] = temaMostrado ? temaMostrado.split("|") : ["", radio.name.trim()];
+      const [art, tit] = temaMostrado ? temaMostrado.split("|") : ["", NOMBRE];
       document.title = (modo === "sonando" ? "▶ " : "") + tit + (art ? " – " + art : "") + " | " + NOMBRE;
     }
   }
@@ -348,6 +346,9 @@
     fetch(TEMA_ACTUAL, { cache: "no-store" })
       .then(r => r.json())
       .then(t => {
+        const etiqueta = document.getElementById("estacion");
+        etiqueta.textContent = t.calidad ? "Calidad: " + t.calidad : "";
+        etiqueta.hidden = !t.calidad;
         if (!t.title) return;
         const clave = t.artist + "|" + t.title;
         if (clave === temaMostrado) return;
