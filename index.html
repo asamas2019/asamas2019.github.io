@@ -165,7 +165,7 @@
 <main class="reproductor" id="reproductor">
   <div class="cabecera">
     <div class="estado"><span class="punto"></span><span id="estado">En vivo</span></div>
-    <span class="calidad" id="calidad" title="Calidad de audio">MP3 · 96 kbps</span>
+    <span class="calidad" id="calidad" title="Códec FDK-AAC, tasa constante (CBR), 96 kbps">Calidad: AAC 96 kbps</span>
   </div>
 
   <div class="tema">
@@ -432,9 +432,13 @@
     // calidad de audio, si el servidor la informa
     const kbps = parseInt(d.bitrate, 10);
     if (kbps > 0) {
-      const formato = /aac/i.test(d.format || d.mimetype || d.codec || "") ? "AAC"
-                    : /ogg|opus/i.test(d.format || d.mimetype || d.codec || "") ? "Opus" : "MP3";
-      document.getElementById("calidad").textContent = formato + " · " + kbps + " kbps";
+      const pista = String(d.format || d.mimetype || d.codec || "");
+      const formato = /mpeg|mp3/i.test(pista) ? "MP3"
+                    : /ogg|opus/i.test(pista) ? "Opus" : "AAC";   // tu radio usa FDK-AAC
+      const nombreFormato = formato === "AAC" ? "FDK-AAC" : formato === "Opus" ? "Ogg/Opus" : "MP3";
+      const etiqueta = document.getElementById("calidad");
+      etiqueta.textContent = "Calidad: " + formato + " " + kbps + " kbps";
+      etiqueta.title = "Códec " + nombreFormato + ", tasa constante (CBR), " + kbps + " kbps";
     }
     const caida = /offline|unavailable|fuera del aire/i.test(String(d.song || "") + " " + titulo)
                || (d.server !== undefined && d.server !== "Online");
