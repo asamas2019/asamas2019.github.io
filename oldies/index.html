@@ -133,7 +133,7 @@
     </div>
     <div>
       <p class="nombre" id="nombre">Radio Oldies</p>
-      <p class="detalle" id="detalle">Buscando la radio de ABBA…</p>
+      <p class="detalle" id="detalle">Conectando con Radio ABBA…</p>
     </div>
   </div>
 
@@ -153,10 +153,7 @@
 </main>
 
 <footer>
-  <p>La radio que suena es la de ABBA, del directorio
-    <a href="https://www.radio-browser.info" target="_blank" rel="noopener">Radio Browser</a>,
-    un directorio abierto de radios por internet. La música y la transmisión pertenecen a esa emisora.
-    <span id="web"></span></p>
+  <p>La transmisión es de <a href="https://101.ru" target="_blank" rel="noopener">101.ru</a>. La música y la transmisión pertenecen a esa emisora. <span id="web"></span></p>
 </footer>
 
 <audio id="audio" preload="none"></audio>
@@ -194,32 +191,15 @@
   // ====== BUSCAR LA RADIO MÁS VOTADA ======
   // Busca, en este orden, la radio más votada que pase éxitos de los 70 y 80:
   // 1) etiquetas "70s" y "80s" juntas, 2) "oldies" + "80s", 3) "oldies" + "70s", 4) cualquier "oldies".
-  // Siempre la radio de ABBA (si hay varias con ese nombre, la primera que funcione).
-  const RADIO_PREFERIDA = "abba";
-  const BUSQUEDAS = [
-    { name: "ABBA" }
-  ];
-  const normal = t => String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-  const sirve = (e, filtro) => (e.url_resolved || "").startsWith("https://") &&
-    normal(e.name).split(" ").includes(RADIO_PREFERIDA);   // "ABBA" como palabra
-
-  async function buscarRadio() {
-    for (const filtro of BUSQUEDAS) {
-      const q = new URLSearchParams(Object.assign({
-        order: "votes", reverse: "true", hidebroken: "true", is_https: "true", limit: "60"
-      }, filtro));
-      for (const s of SERVIDORES) {
-        try {
-          const r = await fetch(s + "/json/stations/search?" + q);
-          if (!r.ok) continue;
-          const elegida = (await r.json()).find(e => sirve(e, filtro));
-          if (elegida) { servidor = s; return elegida; }
-          break;   // respondió pero sin resultados útiles: pasa a la búsqueda siguiente
-        } catch (e) { /* servidor caído: prueba el siguiente */ }
-      }
-    }
-    return null;
-  }
+  // ====== RADIO FIJA ======
+  // Cambiá acá la dirección del audio si algún día deja de funcionar.
+  const RADIO_FIJA = {
+    name: "Radio ABBA",
+    url_resolved: "https://pub0102.101.ru:8443/stream/personal/aacp/64/1785788",
+    codec: "AAC+", bitrate: 64,
+    country: "101.ru"
+  };
+  async function buscarRadio() { return RADIO_FIJA; }
 
   function mostrarRadio(e) {
     radio = e;
@@ -302,7 +282,7 @@
     if (quiereEscuchar) { detener(); return; }
     quiereEscuchar = true; reintentos = 0; decir("Conectando…"); conectar();
     // cuenta la escucha en el directorio, como pide Radio Browser
-    fetch(servidor + "/json/url/" + radio.stationuuid).catch(() => {});
+    if (radio.stationuuid) fetch(servidor + "/json/url/" + radio.stationuuid).catch(() => {});
   });
   audio.addEventListener("error", () => { if (quiereEscuchar && audio.getAttribute("src")) reintentar(); });
   audio.addEventListener("ended", () => { if (quiereEscuchar) reintentar(); });
@@ -332,7 +312,7 @@
     if (e) mostrarRadio(e);
     else {
       document.getElementById("estado").textContent = "Sin conexión";
-      document.getElementById("detalle").textContent = "No se encontró la radio de ABBA.";
+      document.getElementById("detalle").textContent = "No se pudo cargar la radio.";
       decir("Probá recargar la página en un momento.", true);
     }
   });
