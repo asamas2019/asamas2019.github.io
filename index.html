@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Indie Pop en Español</title>
 <meta name="description" content="Pop en español las 24 horas, con artistas independientes. Radio online de Uruguay.">
-<meta name="theme-color" content="#eeeaf6" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#15122a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#e6efec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1a24" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
 <!-- Vista previa al compartir el enlace (WhatsApp, Facebook, X…) -->
 <meta property="og:type" content="website">
@@ -28,28 +28,28 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..900;1,14..32,800..900&display=swap" rel="stylesheet">
 <style>
   /* ====== CAMBIÁ ACÁ LOS COLORES ======
-     Estética de afiche impreso en risografía: papel lila, tinta índigo y dos tintas
-     fluorescentes (rosa y azul) un poco "desfasadas", como en los fanzines de indie pop. */
+     Estética de afiche impreso en risografía: papel verdoso con grano, tinta azul noche
+     y dos tintas (menta y cobalto) un poco "desfasadas", como en los fanzines de indie pop. */
   :root {
-    --papel: #eeeaf6;
-    --tarjeta: #f8f6fc;
-    --tinta: #221c46;
-    --suave: #5f597c;
-    --rosa: #ff4fa3;
-    --azul: #2f5bff;
+    --papel: #e6efec;
+    --tarjeta: #f5faf8;
+    --tinta: #13233a;
+    --suave: #4c5d6b;
+    --tinta-a: #00b37a;   /* menta */
+    --tinta-b: #2f5bff;   /* cobalto */
     --amarillo: #ffd23f;
-    --linea: #221c46;
+    --linea: #13233a;
     --grano: .09;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --papel: #15122a;
-      --tarjeta: #1e1a3a;
-      --tinta: #efeaff;
-      --suave: #a49fc2;
-      --rosa: #ff6bb5;
-      --azul: #7391ff;
-      --linea: #efeaff;
+      --papel: #0f1a24;
+      --tarjeta: #162532;
+      --tinta: #e6f4ef;
+      --suave: #9db3b0;
+      --tinta-a: #2ee6a1;
+      --tinta-b: #6d8dff;
+      --linea: #e6f4ef;
       --grano: .06;
     }
   }
@@ -74,7 +74,7 @@
     font-family: "Inter Display", "Inter", sans-serif; font-weight: 900; font-style: italic;
     font-size: clamp(3.4rem, 17vw, 5.2rem); line-height: .86; letter-spacing: -.055em;
     color: var(--tinta);
-    text-shadow: -.045em .03em 0 var(--rosa), .04em -.025em 0 var(--azul);
+    text-shadow: -.045em .03em 0 var(--tinta-a), .04em -.025em 0 var(--tinta-b);
     padding-left: .06em;
   }
   .lema { margin-top: .9rem; font-size: 1.05rem; color: var(--suave); max-width: 22rem; }
@@ -84,7 +84,7 @@
     width: 100%; max-width: 30rem; position: relative;
     background: var(--tarjeta); border: 2px solid var(--linea);
     border-radius: 1.25rem; padding: 1.4rem 1.4rem 1.2rem;
-    box-shadow: 7px 7px 0 var(--rosa);
+    box-shadow: 7px 7px 0 var(--tinta-a);
   }
   .cabecera { display: flex; justify-content: space-between; align-items: center; gap: .5rem; flex-wrap: wrap; }
   .estado { display: inline-flex; align-items: center; gap: .45rem; font-weight: 600; font-size: .95rem; }
@@ -102,15 +102,16 @@
   }
 
   .tema { display: flex; gap: 1.15rem; align-items: center; margin: 1.5rem 0 1.4rem; }
-  /* la tapa, pegada como un sticker sobre un recuadro azul */
+  /* la tapa, pegada como un sticker sobre un recuadro de la otra tinta */
   .tapa {
     width: 6rem; height: 6rem; flex: none; border-radius: .5rem; overflow: hidden;
     border: 2px solid var(--linea); transform: rotate(-3deg);
-    background: var(--rosa); display: grid; place-items: center;
-    box-shadow: 5px 5px 0 var(--azul);
+    background: var(--tinta-a); display: grid; place-items: center;
+    box-shadow: 5px 5px 0 var(--tinta-b);
   }
   .tapa img { width: 100%; height: 100%; object-fit: cover; display: none; }
-  .tapa svg { width: 2.6rem; height: 2.6rem; fill: var(--tarjeta); }
+  .tapa svg { width: 2.6rem; height: 2.6rem; fill: var(--tinta); }
+  @media (prefers-color-scheme: dark) { .tapa svg { fill: var(--papel); } }
   .titulo {
     font-family: "Inter Display", "Inter", sans-serif; font-weight: 800;
     font-size: 1.45rem; line-height: 1.1; letter-spacing: -.02em;
@@ -130,10 +131,10 @@
   }
   .tiempo.inicio { left: .6rem; }
   .tiempo.final { right: .6rem; }
-  @media (prefers-color-scheme: dark) { .relleno ~ .tiempo.inicio { color: #15122a; } }
+  @media (prefers-color-scheme: dark) { .relleno ~ .tiempo.inicio { color: #0f1a24; } }
   .relleno {
     position: absolute; inset: 0 auto 0 0; width: 0%;
-    background: var(--rosa); transition: width .9s linear;
+    background: var(--tinta-a); transition: width .9s linear;
   }
   .barra.incierta .relleno { width: 0%; transition: none; }
   .progreso[hidden] { display: none; }
@@ -141,13 +142,13 @@
   .controles { display: flex; align-items: center; gap: .75rem; }
   .play {
     width: 4.4rem; height: 4.4rem; flex: none; border-radius: 50%;
-    border: 2px solid var(--linea); background: var(--azul); color: #fff; cursor: pointer;
-    display: grid; place-items: center; box-shadow: 4px 4px 0 var(--rosa);
+    border: 2px solid var(--linea); background: var(--tinta-b); color: #fff; cursor: pointer;
+    display: grid; place-items: center; box-shadow: 4px 4px 0 var(--tinta-a);
     transition: transform .12s ease, box-shadow .12s ease;
   }
-  .play:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--rosa); }
-  .play:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--rosa); }
-  .play:focus-visible { outline: 3px solid var(--rosa); outline-offset: 4px; }
+  .play:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--tinta-a); }
+  .play:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--tinta-a); }
+  .play:focus-visible { outline: 3px solid var(--tinta-a); outline-offset: 4px; }
   @media (prefers-color-scheme: dark) { .play { color: var(--papel); } }
   .play svg { width: 1.8rem; height: 1.8rem; fill: currentColor; }
   .play.cargando svg { display: none; }
@@ -165,10 +166,10 @@
     width: 2.4rem; height: 2.4rem; border: 0; border-radius: 50%; background: transparent;
     color: var(--tinta); cursor: pointer; display: grid; place-items: center;
   }
-  .silencio:hover { background: color-mix(in srgb, var(--rosa) 22%, transparent); }
-  .silencio:focus-visible { outline: 2px solid var(--rosa); }
+  .silencio:hover { background: color-mix(in srgb, var(--tinta-a) 22%, transparent); }
+  .silencio:focus-visible { outline: 2px solid var(--tinta-a); }
   .silencio svg { width: 1.3rem; height: 1.3rem; fill: currentColor; }
-  input[type=range] { width: 6.5rem; accent-color: var(--rosa); }
+  input[type=range] { width: 6.5rem; accent-color: var(--tinta-a); }
   .es-ios input[type=range] { display: none; }   /* iPhone no deja cambiar el volumen desde la web */
 
   .compartir {
@@ -177,8 +178,8 @@
     font: 600 .88rem "Inter", sans-serif; cursor: pointer;
     display: inline-flex; align-items: center; gap: .4rem;
   }
-  .compartir:hover { background: color-mix(in srgb, var(--azul) 14%, var(--tarjeta)); }
-  .compartir:focus-visible { outline: 2px solid var(--rosa); outline-offset: 2px; }
+  .compartir:hover { background: color-mix(in srgb, var(--tinta-b) 14%, var(--tarjeta)); }
+  .compartir:focus-visible { outline: 2px solid var(--tinta-a); outline-offset: 2px; }
   .compartir svg { width: 1.05rem; height: 1.05rem; fill: currentColor; }
   @media (max-width: 26rem) { .compartir span { display: none; } .compartir { padding: 0 .6rem; } }
 
@@ -199,9 +200,9 @@
   .historial li:last-child { border-bottom: 0; }
   .mini {
     width: 2.9rem; height: 2.9rem; flex: none; border-radius: .35rem; object-fit: cover;
-    border: 1.5px solid var(--linea); background: var(--azul);
+    border: 1.5px solid var(--linea); background: var(--tinta-b);
   }
-  .historial li:nth-child(even) .mini { background: var(--rosa); }
+  .historial li:nth-child(even) .mini { background: var(--tinta-a); }
   .historial li div { min-width: 0; }
   .historial li b { font-weight: 600; display: block; overflow-wrap: anywhere; line-height: 1.3; }
   .historial li small { color: var(--suave); font-size: .85rem; }
