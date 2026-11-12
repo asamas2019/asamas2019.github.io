@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Radio Pop</title>
-<meta name="description" content="Radio Pop: pop en español, las 24 horas.">
+<title>Radio Pop en Español</title>
+<meta name="description" content="Radio Pop en Español, las 24 horas.">
 <meta name="theme-color" content="#ffffff">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,6 +39,7 @@
     font-size: clamp(2.6rem, 11vw, 3.6rem); line-height: .95; letter-spacing: -.03em;
   }
   .marca span { color: var(--acento); }
+  .sub-marca { font-size: .45em; letter-spacing: .02em; }
   .lema { color: var(--suave); margin-top: .5rem; }
 
   .reproductor {
@@ -156,8 +157,7 @@
 
 <header>
   <!-- ====== CAMBIÁ ACÁ EL NOMBRE Y EL LEMA ====== -->
-  <h1 class="marca">Radio<br><span>Pop</span></h1>
-  <p class="lema">Pop en español, las 24 horas.</p>
+  <h1 class="marca">Radio<br><span>Pop</span><br><small class="sub-marca">en Español</small></h1>
 </header>
 
 <main class="reproductor" id="reproductor">
@@ -172,7 +172,7 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
     </div>
     <div>
-      <p class="titulo" id="titulo">Radio Pop</p>
+      <p class="titulo" id="titulo">Radio Pop en Español</p>
       <p class="artista" id="artista">Tocá play para escuchar</p>
     </div>
   </div>
@@ -217,7 +217,7 @@
   const CALIDAD = "MP3 96 kbps";   // cambialo acá si cambiás el formato en radio.liq
   const JAMENDO_ID = "9e34a0cf";   // para saber cuánto dura cada canción
 
-  const NOMBRE = "Radio Pop";   // nombre que se ve en la pestaña y en el celular bloqueado
+  const NOMBRE = "Radio Pop en Español";   // nombre que se ve en la pestaña y en el celular bloqueado
   const audio = document.getElementById("audio");
   const boton = document.getElementById("play");
   const icono = document.getElementById("icono");
