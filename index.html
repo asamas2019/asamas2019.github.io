@@ -329,9 +329,32 @@
     actualizarPestana();
   }
 
-  function conectar() {
+  // ====== SINCRONÍA: qué parte del tema está escuchando ESTE oyente ======
+  // La radio cuenta cuántos segundos de audio lleva transmitidos ("pos").
+  // Al conectarse se anota ese número; después, lo que el oyente escucha es
+  // posAlConectar + segundos reproducidos. Así la barra y el título siguen
+  // al audio aunque el navegador se atrase por un corte de internet.
+  let posAlConectar = null;   // pos de la radio al conectarse (null = no se sabe)
+  let posTema = null;         // pos donde empezó el tema que escucha el oyente
+  let ultimoJ = null;         // últimos datos recibidos de la radio
+  let cambiando = false;
+
+  function escuchado() {
+    if (posAlConectar === null || audio.paused || !quiereEscuchar) return null;
+    return posAlConectar + audio.currentTime;
+  }
+
+  async function conectar() {
     clearTimeout(temporizador);
     ponerBoton("cargando");
+    posAlConectar = null; posTema = null;
+    try {
+      const control = new AbortController();
+      setTimeout(() => control.abort(), 3000);
+      const j = await (await fetch(AHORA, { cache: "no-store", signal: control.signal })).json();
+      if (typeof j.pos === "number") posAlConectar = j.pos;
+    } catch (e) { /* sin dato: la barra usa la hora del servidor */ }
+    if (!quiereEscuchar) return;
     audio.src = STREAM + "?t=" + Date.now();   // siempre en vivo
     audio.play().then(() => {
       reintentos = 0; decir(""); ponerBoton("sonando");
@@ -347,6 +370,7 @@
 
   function detener() {
     quiereEscuchar = false;
+    posAlConectar = null; posTema = null;
     clearTimeout(temporizador);
     audio.pause();
     audio.removeAttribute("src");
@@ -439,11 +463,35 @@
   // Pide a la radio el tema actual y el historial (una sola consulta para las dos cosas)
   function textoOyentes(n) { return "👥 " + n + (n === 1 ? " oyente" : " oyentes"); }
 
+  // Si el oyente está atrasado respecto de la radio, muestra el tema que ÉL escucha
+  function ajustarAlOyente(j) {
+    const oido = escuchado();
+    const h = j.historial || [];
+    posTema = null;
+    if (oido === null) return j;
+    const i = h.findIndex(e => typeof e.pos === "number" && e.pos <= oido + 0.5);
+    if (i < 0) return j;
+    const e = h[i];
+    posTema = e.pos;
+    const inicioSeg = Date.now() / 1000 - (oido - e.pos);
+    const copia = JSON.parse(JSON.stringify(j));
+    copia.data[0].track = { artist: e.artist, title: e.title, start: inicioSeg,
+                            duration: e.duration, imageurl: e.image || "" };
+    copia.historial = [Object.assign({}, e, { time: inicioSeg })].concat(h.slice(i + 1));
+    return copia;
+  }
+
+  function procesar(j) {
+    const k = ajustarAlOyente(j);
+    mostrar(k); usarHistorial({ data: [k.historial || []] });
+  }
+
   function pedirInfo() {
     fetch(AHORA, { cache: "no-store" })
       .then(r => r.json())
       .then(j => {
-        mostrar(j); usarHistorial({ data: [j.historial || []] });
+        ultimoJ = j;
+        procesar(j);
         const o = document.getElementById("oyentes");
         o.hidden = typeof j.oyentes !== "number" || j.oyentes < 1;   // con 0 no se muestra
         if (!o.hidden) o.textContent = textoOyentes(j.oyentes);
@@ -501,8 +549,14 @@
     // sin tema conocido no hay nada que medir: la barra se oculta
     document.getElementById("progreso").hidden = !actual;
     document.getElementById("t-total").textContent = duracion ? reloj(duracion) : "--:--";
+    const oido = escuchado();
+    // cambio de tema justo cuando el oyente llega al siguiente (sin esperar la próxima consulta)
+    if (oido !== null && ultimoJ && posTema !== null && !cambiando &&
+        (ultimoJ.historial || []).some(e => e.pos > posTema && e.pos <= oido + 0.5)) {
+      cambiando = true; procesar(ultimoJ); cambiando = false;
+    }
     if (inicio && duracion) {
-      const pasado = (Date.now() - inicio) / 1000;
+      const pasado = (oido !== null && posTema !== null) ? oido - posTema : (Date.now() - inicio) / 1000;
       const pct = Math.min(100, pasado / duracion * 100);
       barra.classList.remove("incierta");
       relleno.style.width = pct + "%";
