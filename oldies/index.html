@@ -162,7 +162,7 @@
 </main>
 
 <footer>
-  <p>La transmisión es de una emisora externa de éxitos de los 70 y 80. La música y la transmisión pertenecen a esa emisora. <span id="web"></span></p>
+  <p>La transmisión es de <a href="https://www.harmonyfm.de" target="_blank" rel="noopener">harmony FM</a> (70er-80er Kultnight). La música y la transmisión pertenecen a esa emisora. <span id="web"></span></p>
 </footer>
 
 <audio id="audio" preload="none"></audio>
@@ -203,8 +203,9 @@
   // ====== RADIO FIJA ======
   // Cambiá acá la dirección del audio si algún día deja de funcionar.
   const RADIO_FIJA = {
-    name: "Radio 70-80",
-    url_resolved: "https://onair18.xdevel.com/proxy/7080it?mp=/stream"
+    name: "harmony 70er-80er Kultnight",
+    // harmony 70er-80er Kultnight, entregada con https por tu servidor de Render
+    url_resolved: "https://radio-render-ey3i.onrender.com/oldies-stream"
   };
   async function buscarRadio() { return RADIO_FIJA; }
 
