@@ -209,9 +209,9 @@
 
 <script>
   // ====== DATOS DE TU RADIO ======
-  const STREAM = "https://usa3.fastcast4u.com/proxy/agstweb/stream";
-  const INFO = "https://usa3.fastcast4u.com/rpc/agstweb/streaminfo.get";
-  const RECIENTES = "https://usa3.fastcast4u.com/rpc/agstweb/recenttracks.get";
+  const RADIO = "https://radio-render-ey3i.onrender.com";   // tu radio en Render
+  const STREAM = RADIO + "/stream";
+  const AHORA = RADIO + "/ahora";                           // tema actual e historial
   const JAMENDO_ID = "9e34a0cf";   // para saber cuánto dura cada canción
 
   const NOMBRE = "Radio Pop";   // nombre que se ve en la pestaña y en el celular bloqueado
@@ -352,7 +352,13 @@
     s.src = url + (url.includes("?") ? "&" : "?") + "callback=" + nombre;
     document.body.appendChild(s);
   }
-  function pedirInfo() { jsonp(INFO, mostrar); }
+  // Pide a la radio el tema actual y el historial (una sola consulta para las dos cosas)
+  function pedirInfo() {
+    fetch(AHORA, { cache: "no-store" })
+      .then(r => r.json())
+      .then(j => { mostrar(j); usarHistorial({ data: [j.historial || []] }); })
+      .catch(() => {});
+  }
 
   // ====== BARRA DE PROGRESO ======
   let inicio = null;      // cuándo empezó el tema (null = no se sabe)
@@ -384,6 +390,12 @@
       jsonp("https://api.jamendo.com/v3.0/tracks/?" + q, datos => {
         const tema = elegir((datos && datos.results) || []);
         if (tema && tema.duration) { duracion = Number(tema.duration); pintarBarra(); }
+        // tapa del disco desde Jamendo, si la radio no mandó una
+        const img = document.getElementById("tapa");
+        if (tema && tema.image && img.style.display !== "block") {
+          img.src = tema.image; img.style.display = "block";
+          datosBloqueo(titulo, artista, tema.image);
+        }
         else if (siFalla) siFalla();
       });
     };
@@ -477,7 +489,11 @@
     }
     titulo = String(titulo).replace(/^\d+ - /, "");
     const hora = Number(item.time) || 0;   // segundos desde 1970: cuándo empezó a sonar
-    return titulo ? { artista, titulo, hora } : null;
+    // descarta registros vacíos o de "desconocido" (por ejemplo, al reiniciar el servidor)
+    const vacio = t => !t || /^(unknown|desconocido|n\/a|-+)$/i.test(String(t).trim());
+    if (vacio(titulo)) return null;
+    if (vacio(artista)) artista = "";
+    return { artista, titulo, hora };
   }
 
   function buscarLista(x) {
@@ -521,21 +537,10 @@
     return true;
   }
 
-  function pedirHistorial() {
-    let llego = false;
-    jsonp(RECIENTES, datos => { llego = true; usarHistorial(datos); });
-    // si el servidor no responde de esa forma, se pide como datos comunes
-    setTimeout(() => {
-      if (llego) return;
-      fetch(RECIENTES, { cache: "no-store" })
-        .then(r => r.json()).then(usarHistorial).catch(() => {});
-    }, 4000);
-  }
+  function pedirHistorial() { pedirInfo(); }
 
   pedirInfo();
-  pedirHistorial();
   setInterval(pedirInfo, 5000);
-  setInterval(pedirHistorial, 30000);
 </script>
 </body>
 </html>
