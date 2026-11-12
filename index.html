@@ -120,19 +120,23 @@
 
   .progreso { margin: 0 0 1.4rem; }
   .barra {
-    height: .7rem; border-radius: 1rem; border: 2px solid var(--linea);
+    height: 1.7rem; border-radius: 1rem; border: 2px solid var(--linea);
     background: transparent; overflow: hidden; position: relative;
   }
+  /* principio (lo que va) y final (lo que dura) de la canción, adentro de la barra */
+  .tiempo {
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 1;
+    font-size: .8rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--tinta);
+  }
+  .tiempo.inicio { left: .6rem; }
+  .tiempo.final { right: .6rem; }
+  @media (prefers-color-scheme: dark) { .relleno ~ .tiempo.inicio { color: #15122a; } }
   .relleno {
     position: absolute; inset: 0 auto 0 0; width: 0%;
     background: var(--rosa); transition: width .9s linear;
   }
   .barra.incierta .relleno { width: 0%; transition: none; }
   .progreso[hidden] { display: none; }
-  .tiempos {
-    display: flex; justify-content: space-between; margin-top: .35rem;
-    font-size: .82rem; color: var(--suave); font-variant-numeric: tabular-nums;
-  }
 
   .controles { display: flex; align-items: center; gap: .75rem; }
   .play {
@@ -240,8 +244,11 @@
 
   <div class="progreso" id="progreso" hidden>
     <div class="barra incierta" id="barra" role="progressbar" aria-label="Avance de la canción"
-         aria-valuemin="0" aria-valuemax="100"><span class="relleno" id="relleno"></span></div>
-    <div class="tiempos"><span id="t-actual">--:--</span><span id="t-total">--:--</span></div>
+         aria-valuemin="0" aria-valuemax="100">
+      <span class="relleno" id="relleno"></span>
+      <span class="tiempo inicio" id="t-actual">0:00</span>
+      <span class="tiempo final" id="t-total">--:--</span>
+    </div>
   </div>
 
   <div class="controles">
@@ -328,12 +335,26 @@
     actualizarPestana();
   }
 
-  let ultimoJ = null;   // últimos datos recibidos de la radio
+
+  // ====== SINCRONÍA EXACTA CON LO QUE SUENA ======
+  // Cada conexión lleva un número propio. La radio anota en qué segundo de su
+  // transmisión le empezó a mandar audio a ese número ("mi_inicio"). Lo que el oyente
+  // escucha es mi_inicio + lo que lleva reproducido su navegador: no importa cuánto
+  // se atrase internet ni la hora del celular.
+  let miId = "", miInicio = null, posTema = null, ultimoJ = null;
+
+  function escuchado() {
+    if (miInicio === null || audio.paused || !quiereEscuchar) return null;
+    return miInicio + audio.currentTime;
+  }
 
   function conectar() {
     clearTimeout(temporizador);
     ponerBoton("cargando");
-    audio.src = STREAM + "?t=" + Date.now();   // siempre en vivo
+    miId = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    miInicio = null; posTema = null;
+    audio.src = STREAM + "?id=" + miId;   // siempre en vivo
+    setTimeout(pedirInfo, 1500);          // averigua enseguida dónde empezó a escuchar
     audio.play().then(() => {
       reintentos = 0; decir(""); ponerBoton("sonando");
     }).catch(err => {
@@ -348,6 +369,7 @@
 
   function detener() {
     quiereEscuchar = false;
+    miId = ""; miInicio = null; posTema = null;
     clearTimeout(temporizador);
     audio.pause();
     audio.removeAttribute("src");
@@ -440,8 +462,27 @@
   // Pide a la radio el tema actual y el historial (una sola consulta para las dos cosas)
   function textoOyentes(n) { return n + (n === 1 ? " oyente" : " oyentes"); }
 
+  // Elige, del historial, el tema que este oyente está escuchando de verdad
+  function ajustarAlOyente(j) {
+    const oido = escuchado();
+    const h = j.historial || [];
+    posTema = null;
+    if (oido === null) return j;
+    const i = h.findIndex(e => typeof e.pos === "number" && e.pos <= oido + 0.3);
+    if (i < 0) return j;
+    const e = h[i];
+    posTema = e.pos;
+    const empezo = ahora() / 1000 - (oido - e.pos);
+    const copia = JSON.parse(JSON.stringify(j));
+    copia.data[0].track = { artist: e.artist, title: e.title, start: empezo,
+                            duration: e.duration, imageurl: e.image || "" };
+    copia.historial = [Object.assign({}, e, { time: empezo })].concat(h.slice(i + 1));
+    return copia;
+  }
+
   function procesar(j) {
-    mostrar(j); usarHistorial({ data: [j.historial || []] });
+    const k = ajustarAlOyente(j);
+    mostrar(k); usarHistorial({ data: [k.historial || []] });
   }
 
   // ====== HORA DE INTERNET ======
@@ -463,11 +504,12 @@
   function pedirInfo() {
     const t0 = Date.now();
     ultimaConsulta = t0;
-    fetch(AHORA, { cache: "no-store" })
+    fetch(AHORA + (miId ? "?id=" + miId : ""), { cache: "no-store" })
       .then(r => r.json())
       .then(j => {
         ajustarReloj(j, t0, Date.now());
         ultimoJ = j;
+        if (miId && typeof j.mi_inicio === "number") miInicio = j.mi_inicio;
         procesar(j);
         const o = document.getElementById("oyentes");
         o.hidden = typeof j.oyentes !== "number" || j.oyentes < 1;   // con 0 no se muestra
@@ -526,10 +568,18 @@
     // sin tema conocido no hay nada que medir: la barra se oculta
     document.getElementById("progreso").hidden = !actual;
     document.getElementById("t-total").textContent = duracion ? reloj(duracion) : "--:--";
+    const oido = escuchado();
+    // el oyente llegó al tema siguiente: cambia título, tapa y barra en ese momento
+    if (oido !== null && posTema !== null && ultimoJ && !cambiando &&
+        (ultimoJ.historial || []).some(e => e.pos > posTema && e.pos <= oido + 0.3)) {
+      cambiando = true; procesar(ultimoJ); cambiando = false; return;
+    }
     if (inicio && duracion) {
-      const pasado = (ahora() - inicio) / 1000 - (quiereEscuchar ? RETRASO : 0);
-    // terminó el tema: pregunta enseguida cuál sigue (como mucho una vez cada 2 s)
-    if (pasado >= duracion && Date.now() - ultimaConsulta > 2000) pedirInfo();
+      const pasado = (oido !== null && posTema !== null)
+        ? oido - posTema                                    // exacto: lo que suena en este navegador
+        : (ahora() - inicio) / 1000 - (quiereEscuchar ? RETRASO : 0);   // aproximado: hora de internet
+      // terminó el tema: pregunta enseguida cuál sigue (como mucho una vez cada 2 s)
+      if (pasado >= duracion && Date.now() - ultimaConsulta > 2000) pedirInfo();
       const pct = Math.min(100, pasado / duracion * 100);
       barra.classList.remove("incierta");
       relleno.style.width = pct + "%";
@@ -544,7 +594,8 @@
         inicio ? reloj((ahora() - inicio) / 1000) : "--:--";
     }
   }
-  setInterval(pintarBarra, 1000);
+  let cambiando = false;
+  setInterval(pintarBarra, 500);
 
   function mostrar(datos) {
     const d = datos && datos.data && datos.data[0];
