@@ -59,8 +59,20 @@
   body {
     min-height: 100vh; background: var(--papel); color: var(--tinta);
     font-family: "Inter", system-ui, sans-serif; line-height: 1.5;
-    display: flex; flex-direction: column; align-items: center;
-    padding: 2.25rem 1rem 3rem;
+    padding: 2.25rem 1rem 3rem; overflow-x: hidden;
+  }
+  /* En celular todo va en una columna; en pantallas anchas, dos:
+     el reproductor a la izquierda (queda fijo al bajar) y el resto a la derecha. */
+  .pagina { display: flex; flex-direction: column; align-items: center; }
+  .col-a, .col-b { width: 100%; max-width: 30rem; }
+  @media (min-width: 62rem) {
+    .pagina {
+      display: grid; grid-template-columns: 30rem 27rem; gap: 0 4.5rem;
+      justify-content: center; align-items: start;
+    }
+    .col-a { position: sticky; top: 2.25rem; }
+    .col-b { padding-top: .6rem; }
+    .col-b .historial { margin-top: 0; }
   }
   /* grano de papel impreso */
   body::before {
@@ -71,7 +83,7 @@
   @media (prefers-color-scheme: dark) { body::before { mix-blend-mode: screen; } }
 
   /* ====== El nombre: impreso con dos tintas desfasadas ====== */
-  header { width: 100%; max-width: 30rem; margin-bottom: 1.75rem; }
+  header { margin-bottom: 1.75rem; }
   .marca {
     font-family: "Inter Display", "Inter", sans-serif; font-weight: 900; font-style: italic;
     font-size: clamp(3.4rem, 17vw, 5.2rem); line-height: .86; letter-spacing: -.055em;
@@ -83,16 +95,18 @@
 
   /* ====== Reproductor ====== */
   .reproductor {
-    width: 100%; max-width: 30rem; position: relative;
+    position: relative;
     background: var(--tarjeta); border: 2px solid var(--linea);
     border-radius: 1.25rem; padding: 1.4rem 1.4rem 1.2rem;
     box-shadow: 7px 7px 0 var(--tinta-a);
   }
   .cabecera { display: flex; justify-content: space-between; align-items: center; gap: .5rem; flex-wrap: wrap; }
   .estado { display: inline-flex; align-items: center; gap: .45rem; font-weight: 600; font-size: .95rem; }
-  .punto { width: .7rem; height: .7rem; border-radius: 50%; background: var(--suave); border: 2px solid var(--linea); }
+  /* punto menta = la radio está en vivo; amarillo que late = la estás escuchando */
+  .punto { width: .7rem; height: .7rem; border-radius: 50%; background: var(--tinta-a); border: 2px solid var(--linea); }
   .sonando .punto { background: var(--amarillo); animation: latido 1.4s ease-in-out infinite; }
   .apagada .estado { color: var(--suave); }
+  .apagada .artista { display: block; }   /* el aviso de fuera del aire se lee entero */
   .apagada .punto { background: transparent; animation: none; }
   @keyframes latido { 50% { transform: scale(.7); } }
 
@@ -120,6 +134,16 @@
   }
   .artista { color: var(--suave); margin-top: .3rem; font-size: 1rem; }
   .titulo, .artista { overflow-wrap: anywhere; }
+  /* títulos largos: letra más chica y como mucho 3 renglones, para que el play no se vaya de la pantalla */
+  .titulo { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+  .titulo.largo { font-size: 1.15rem; line-height: 1.18; }
+  .artista { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .tema > div:last-child { min-width: 0; }
+  /* crédito al artista: página del tema y licencia */
+  .credito { margin-top: .35rem; font-size: .8rem; color: var(--suave); }
+  .credito[hidden] { display: none; }
+  .credito a { color: var(--tinta); text-underline-offset: .15em; }
+  .credito a:focus-visible { outline: 2px solid var(--tinta-a); outline-offset: 2px; }
 
   .progreso { margin: 0 0 1.4rem; }
   .barra {
@@ -178,17 +202,17 @@
   }
   .volumen { margin-left: auto; display: flex; align-items: center; gap: .3rem; }
   .silencio {
-    width: 2.4rem; height: 2.4rem; border: 0; border-radius: 50%; background: transparent;
+    width: 2.75rem; height: 2.75rem; border: 0; border-radius: 50%; background: transparent;
     color: var(--tinta); cursor: pointer; display: grid; place-items: center;
   }
   .silencio:hover { background: color-mix(in srgb, var(--tinta-a) 22%, transparent); }
   .silencio:focus-visible { outline: 2px solid var(--tinta-a); }
   .silencio svg { width: 1.3rem; height: 1.3rem; fill: currentColor; }
-  input[type=range] { width: 6.5rem; accent-color: var(--tinta-a); }
+  input[type=range] { width: 6.5rem; height: 2.75rem; accent-color: var(--tinta-a); cursor: pointer; }
   .es-ios input[type=range] { display: none; }   /* iPhone no deja cambiar el volumen desde la web */
 
   .compartir {
-    height: 2.5rem; padding: 0 .95rem; border-radius: 2rem;
+    height: 2.75rem; min-width: 2.75rem; justify-content: center; padding: 0 .95rem; border-radius: 2rem;
     border: 2px solid var(--linea); background: var(--tarjeta); color: var(--tinta);
     font: 600 .88rem "Inter", sans-serif; cursor: pointer;
     display: inline-flex; align-items: center; gap: .4rem;
@@ -196,13 +220,18 @@
   .compartir:hover { background: color-mix(in srgb, var(--tinta-b) 14%, var(--tarjeta)); }
   .compartir:focus-visible { outline: 2px solid var(--tinta-a); outline-offset: 2px; }
   .compartir svg { width: 1.05rem; height: 1.05rem; fill: currentColor; }
-  @media (max-width: 26rem) { .compartir span { display: none; } .compartir { padding: 0 .6rem; } }
+  @media (max-width: 26rem) {
+    .compartir span { display: none; } .compartir { padding: 0; }
+    input[type=range] { width: 5rem; }
+    .reproductor { padding: 1.2rem 1.1rem 1.1rem; }
+  }
+  .play[disabled] { opacity: .45; cursor: not-allowed; box-shadow: none; transform: none; }
 
   .aviso { margin-top: .9rem; font-size: .88rem; color: var(--suave); }
   .aviso:empty { margin-top: 0; }
 
   /* ====== Sonó recién ====== */
-  .historial { width: 100%; max-width: 30rem; margin-top: 2.6rem; }
+  .historial { margin-top: 2.6rem; }
   .historial h2 {
     font-family: "Inter Display", "Inter", sans-serif; font-weight: 900; font-style: italic;
     font-size: 1.5rem; letter-spacing: -.03em; margin-bottom: .5rem;
@@ -215,20 +244,38 @@
   .historial li:last-child { border-bottom: 0; }
   .mini {
     width: 2.9rem; height: 2.9rem; flex: none; border-radius: .35rem; object-fit: cover;
-    border: 1.5px solid var(--linea); background: var(--tinta-b);
+    border: 1.5px solid var(--linea);
+    /* sin tapa: una nota musical sobre el color */
+    background: var(--tinta-b) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='white' d='M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z'/></svg>") center / 55% no-repeat;
   }
-  .historial li:nth-child(even) .mini { background: var(--tinta-a); }
-  .historial li div { min-width: 0; }
+  .historial li:nth-child(even) .mini { background-color: var(--tinta-a); }
+  .historial li a { color: inherit; text-decoration: none; }
+  .historial li a:hover b { text-decoration: underline; text-underline-offset: .15em; }
+  .historial li a:focus-visible { outline: 2px solid var(--tinta-a); outline-offset: 2px; }
+  .historial li div, .historial li a { min-width: 0; }
   .historial li b { font-weight: 600; display: block; overflow-wrap: anywhere; line-height: 1.3; }
   .historial li small { color: var(--suave); font-size: .85rem; }
   .historial .vacio { color: var(--suave); border: 0; }
 
   /* ====== Escribinos ====== */
-  .contacto { width: 100%; max-width: 30rem; margin-top: 2.6rem; }
+  .contacto { margin-top: 2.6rem; }
   .contacto h2 {
     font-family: "Inter Display", "Inter", sans-serif; font-weight: 900; font-style: italic;
     font-size: 1.5rem; letter-spacing: -.03em;
   }
+  /* el formulario viene cerrado: se abre al tocar "Escribinos" */
+  .contacto summary {
+    list-style: none; cursor: pointer; display: flex; align-items: center;
+    justify-content: space-between; gap: 1rem; min-height: 2.75rem;
+  }
+  .contacto summary::-webkit-details-marker { display: none; }
+  .contacto summary:focus-visible { outline: 3px solid var(--tinta-a); outline-offset: 4px; border-radius: .4rem; }
+  .abrir {
+    font: 600 .88rem "Inter", sans-serif; white-space: nowrap;
+    border: 2px solid var(--linea); border-radius: 2rem; padding: .45rem .95rem; background: var(--tarjeta);
+  }
+  .abrir::before { content: "Abrir"; }
+  .contacto details[open] .abrir::before { content: "Cerrar"; }
   .contacto-intro { color: var(--suave); margin: .2rem 0 1rem; }
   .contacto form {
     background: var(--tarjeta); border: 2px solid var(--linea); border-radius: 1.25rem;
@@ -246,9 +293,9 @@
   .contacto input:focus-visible, .contacto textarea:focus-visible, .contacto select:focus-visible {
     outline: 3px solid var(--tinta-a); outline-offset: 1px;
   }
-  .fila { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+  .fila { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; align-items: end; }
   @media (max-width: 26rem) { .fila { grid-template-columns: 1fr; gap: 0; } }
-  .trampa { position: absolute; left: -9999px; }
+  .trampa { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
   .enviar {
     margin-top: 1.1rem; height: 2.9rem; padding: 0 1.3rem; border-radius: 2rem;
     border: 2px solid var(--linea); background: var(--tinta-a); color: var(--tinta);
@@ -265,8 +312,28 @@
   .c-estado.mal { color: #c0392b; }
   @media (prefers-color-scheme: dark) { .c-estado.mal { color: #ff8a7a; } }
 
+  /* ====== Mini reproductor: aparece abajo cuando el botón de play queda fuera de la pantalla ====== */
+  .minirep {
+    position: fixed; left: 50%; bottom: .75rem; z-index: 20;
+    width: min(30rem, calc(100% - 1.5rem)); transform: translate(-50%, 140%);
+    display: flex; align-items: center; gap: .8rem;
+    background: var(--tarjeta); border: 2px solid var(--linea); border-radius: 1rem;
+    padding: .55rem .7rem .55rem .9rem; box-shadow: 5px 5px 0 var(--tinta-a);
+    transition: transform .25s ease; visibility: hidden;
+  }
+  .minirep.visible { transform: translate(-50%, 0); visibility: visible; }
+  @media (prefers-reduced-motion: reduce) { .minirep { transition: none; } }
+  .minirep-texto { min-width: 0; flex: 1; line-height: 1.25; }
+  .minirep-texto b, .minirep-texto span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .minirep-texto b { font-weight: 700; font-size: .95rem; }
+  .minirep-texto span { color: var(--suave); font-size: .82rem; }
+  .minirep .play { width: 3rem; height: 3rem; box-shadow: 3px 3px 0 var(--tinta-a); }
+  .minirep .play svg { width: 1.3rem; height: 1.3rem; }
+  .minirep .play.cargando::after { width: 1.1rem; height: 1.1rem; }
+  body.con-minirep { padding-bottom: 6rem; }
+
   footer {
-    width: 100%; max-width: 30rem; margin-top: 2.5rem;
+    margin-top: 2.5rem;
     font-size: .82rem; line-height: 1.55; color: var(--suave);
   }
   footer a { color: var(--tinta); }
@@ -275,6 +342,8 @@
 </head>
 <body>
 
+<div class="pagina">
+<div class="col-a">
 <header>
   <!-- ====== CAMBIÁ ACÁ EL NOMBRE ====== -->
   <h1 class="marca">Indie<br>Pop</h1>
@@ -298,6 +367,7 @@
     <div>
       <p class="titulo" id="titulo">Indie Pop en Español</p>
       <p class="artista" id="artista">Tocá play para escuchar</p>
+      <p class="credito" id="credito" hidden></p>
     </div>
   </div>
 
@@ -333,14 +403,17 @@
 
   <p class="aviso" id="aviso" role="status"></p>
 </main>
+</div>
 
+<div class="col-b">
 <section class="historial" aria-labelledby="titulo-historial">
   <h2 id="titulo-historial">Sonó recién</h2>
-  <ol id="lista"><li class="vacio">Todavía no hay datos.</li></ol>
+  <ol id="lista"><li class="vacio">Acá vas a ver los temas que van sonando.</li></ol>
 </section>
 
 <section class="contacto" aria-labelledby="titulo-contacto">
-  <h2 id="titulo-contacto">Escribinos</h2>
+  <details id="detalle-contacto">
+  <summary><h2 id="titulo-contacto">Escribinos</h2><span class="abrir" aria-hidden="true"></span></summary>
   <p class="contacto-intro">Esta radio la hace una sola persona desde Montevideo. Tu mensaje llega directo.</p>
   <form id="form-contacto" novalidate>
     <label for="c-motivo">Sobre qué</label>
@@ -372,6 +445,7 @@
     <button type="submit" class="enviar" id="c-enviar">Enviar mensaje</button>
     <p class="c-estado" id="c-estado" role="status" aria-live="polite"></p>
   </form>
+  </details>
 </section>
 
 <footer>
@@ -380,6 +454,16 @@
   Latinoamérica y España. Escuchala en vivo desde el celular o la computadora, sin registrarte.</p>
   <p>La música es de artistas independientes, bajo licencias Creative Commons. Cada tema pertenece a su artista.</p>
 </footer>
+</div>
+</div>
+
+<!-- Mini reproductor fijo: se muestra cuando el play grande no está a la vista -->
+<div class="minirep" id="minirep" aria-hidden="true">
+  <div class="minirep-texto"><b id="mini-titulo">Indie Pop en Español</b><span id="mini-artista"></span></div>
+  <button class="play" id="mini-play" aria-label="Escuchar" tabindex="-1">
+    <svg id="mini-icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+  </button>
+</div>
 
 <audio id="audio" preload="none"></audio>
 
@@ -402,7 +486,9 @@
   const PAUSA = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
   const VOL = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4z"/>';
   const MUDO = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.6 3 2.7-2.7-1.4-1.4-2.7 2.7-2.7-2.7-1.4 1.4 2.7 2.7-2.7 2.7 1.4 1.4 2.7-2.7 2.7 2.7 1.4-1.4z"/>';
+  const miniPlay = document.getElementById("mini-play");
   let quiereEscuchar = false;   // el oyente tocó play (aunque se corte, se reintenta)
+  let enAire = true;            // false mientras la radio está fuera del aire
   let reintentos = 0, temporizador = null;
 
   // 5. volumen y silencio (en iPhone solo silencio)
@@ -431,6 +517,11 @@
     icono.innerHTML = modo === "sonando" ? PAUSA : PLAY;
     boton.setAttribute("aria-label", modo === "detenido" ? "Escuchar" : "Pausar");
     caja.classList.toggle("sonando", modo === "sonando");
+    // el mini reproductor copia el estado del botón grande
+    miniPlay.classList.toggle("cargando", modo === "cargando");
+    document.getElementById("mini-icono").innerHTML = modo === "sonando" ? PAUSA : PLAY;
+    miniPlay.setAttribute("aria-label", modo === "detenido" ? "Escuchar" : "Pausar");
+    pintarEstado();
     if ("mediaSession" in navigator) {
       navigator.mediaSession.playbackState = modo === "detenido" ? "paused" : "playing";
     }
@@ -478,6 +569,7 @@
     audio.load();
     decir("");
     ponerBoton("detenido");
+    boton.disabled = miniPlay.disabled = !enAire;
   }
 
   // 7. reconexión automática: espera 2, 4, 8… hasta 30 segundos entre intentos
@@ -493,10 +585,34 @@
     temporizador = setTimeout(conectar, espera * 1000);
   }
 
-  boton.addEventListener("click", () => {
+  function tocarPlay() {
     if (quiereEscuchar) detener();
-    else { quiereEscuchar = true; reintentos = 0; decir("Conectando…"); conectar(); }
+    else if (enAire) { quiereEscuchar = true; reintentos = 0; decir("Conectando…"); conectar(); }
+  }
+  boton.addEventListener("click", tocarPlay);
+  miniPlay.addEventListener("click", tocarPlay);
+
+  // Barra espaciadora = play / pausa (salvo que se esté escribiendo en el formulario)
+  document.addEventListener("keydown", e => {
+    if (e.code !== "Space" || e.repeat) return;
+    if (e.target.closest("input, textarea, select, button, summary, a")) return;
+    e.preventDefault(); tocarPlay();
   });
+
+  // Mini reproductor: aparece cuando los controles grandes salen de la pantalla
+  const minirep = document.getElementById("minirep");
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(([c]) => {
+      const mostrarlo = !c.isIntersecting;
+      minirep.classList.toggle("visible", mostrarlo);
+      minirep.setAttribute("aria-hidden", !mostrarlo);
+      miniPlay.tabIndex = mostrarlo ? 0 : -1;
+      document.body.classList.toggle("con-minirep", mostrarlo);
+    }, { threshold: 0.2 }).observe(document.querySelector(".controles"));
+  }
+
+  // En pantallas anchas hay lugar: el formulario viene abierto
+  if (window.matchMedia("(min-width: 62rem)").matches) document.getElementById("detalle-contacto").open = true;
   audio.addEventListener("error", () => { if (quiereEscuchar && audio.getAttribute("src")) reintentar(); });
   audio.addEventListener("ended", () => { if (quiereEscuchar) reintentar(); });
   audio.addEventListener("stalled", () => {
@@ -529,17 +645,76 @@
   }
 
   // 2. la radio fuera del aire
-  function ponerAire(enAire) {
-    caja.classList.toggle("apagada", !enAire);
-    document.getElementById("estado").textContent = enAire ? "En vivo" : "Fuera del aire";
+  function ponerAire(si) {
+    const cambio = si !== enAire;
+    enAire = si;
+    caja.classList.toggle("apagada", !si);
+    // fuera del aire no tiene sentido tocar play (salvo para pausar si ya estaba escuchando)
+    boton.disabled = miniPlay.disabled = !si && !quiereEscuchar;
+    if (!si) {
+      document.getElementById("titulo").textContent = NOMBRE;
+      document.getElementById("titulo").classList.remove("largo");
+      document.getElementById("artista").textContent = "La radio está arrancando. Vuelve sola en unos minutos.";
+      document.getElementById("credito").hidden = true;
+      document.getElementById("despues").hidden = true;
+      const img = document.getElementById("tapa"); img.removeAttribute("src"); img.style.display = "none";
+      historial.length = 0;            // al volver, el primer tema se muestra de nuevo
+      pintarMini(NOMBRE, "Fuera del aire");
+    } else if (cambio && !actual) {
+      document.getElementById("artista").textContent = "Tocá play para escuchar";
+    }
+    pintarEstado();
+  }
+
+  // "En vivo" (la radio transmite) / "Escuchando" (le diste play) / "Fuera del aire"
+  function pintarEstado() {
+    const escuchando = caja.classList.contains("sonando");
+    document.getElementById("estado").textContent = !enAire ? "Fuera del aire" : escuchando ? "Escuchando" : "En vivo";
+  }
+
+  function pintarMini(titulo, artista) {
+    document.getElementById("mini-titulo").textContent = titulo;
+    document.getElementById("mini-artista").textContent = artista;
+  }
+
+  // Crédito al artista: enlace a la página del tema y nombre de la licencia
+  function nombreLicencia(url) {
+    const m = /creativecommons\.org\/(licenses|publicdomain)\/([a-z-]+)/i.exec(url || "");
+    if (!m) return "";
+    return m[1] === "publicdomain" ? "dominio público" : "CC " + m[2].toUpperCase();
+  }
+  function enlaceSeguro(url) { return /^https?:\/\//i.test(url || "") ? url : ""; }
+  function pintarCredito(pista) {
+    const p = document.getElementById("credito");
+    const enlace = enlaceSeguro(pista.link), lic = nombreLicencia(pista.license);
+    p.textContent = "";
+    p.hidden = !enlace && !lic;
+    if (enlace) {
+      const a = document.createElement("a");
+      a.href = enlace; a.target = "_blank"; a.rel = "noopener";
+      a.textContent = /archive\.org/.test(enlace) ? "Ver en Internet Archive" : "Ver en Jamendo";
+      p.appendChild(a);
+    }
+    if (lic) {
+      const licUrl = enlaceSeguro(pista.license);
+      p.appendChild(document.createTextNode(enlace ? ", licencia " : "Licencia "));
+      if (licUrl) {
+        const a = document.createElement("a");
+        a.href = licUrl; a.target = "_blank"; a.rel = "noopener license"; a.textContent = lic;
+        p.appendChild(a);
+      } else p.appendChild(document.createTextNode(lic));
+    }
   }
 
   document.getElementById("calidad").textContent = CALIDAD;
 
   // Compartir: en el celular abre WhatsApp, Instagram, etc.; en la PC copia el enlace
   document.getElementById("compartir").addEventListener("click", async () => {
-    const datos = { title: NOMBRE, text: "Escuchá " + NOMBRE + ", pop en español las 24 horas 🎶",
-                    url: location.origin + location.pathname };
+    const [artistaAhora, temaAhora] = actual ? actual.split("|") : ["", ""];
+    const texto = temaAhora
+      ? "Estoy escuchando «" + temaAhora + "»" + (artistaAhora ? " de " + artistaAhora : "") + " en " + NOMBRE + " 🎶"
+      : "Escuchá " + NOMBRE + ", pop independiente en español las 24 horas 🎶";
+    const datos = { title: NOMBRE, text: texto, url: location.origin + location.pathname };
     try {
       if (navigator.share) { await navigator.share(datos); return; }
       await navigator.clipboard.writeText(datos.url);
@@ -577,7 +752,8 @@
     const empezo = ahora() / 1000 - (oido - e.pos);
     const copia = JSON.parse(JSON.stringify(j));
     copia.data[0].track = { artist: e.artist, title: e.title, start: empezo,
-                            duration: e.duration, imageurl: e.image || "" };
+                            duration: e.duration, imageurl: e.image || "",
+                            link: e.link || "", license: e.license || "" };
     copia.historial = [Object.assign({}, e, { time: empezo })].concat(h.slice(i + 1));
     // si el oyente está atrasado, lo que viene para él ya empezó en la radio
     if (i > 0) copia.siguiente = { artist: h[i - 1].artist, title: h[i - 1].title, image: h[i - 1].image || "" };
@@ -776,7 +952,10 @@
     if (!titulo) return;
     titulo = titulo.replace(/^\d+ - /, "");   // saca el número de Jamendo del nombre
     document.getElementById("titulo").textContent = titulo;
+    document.getElementById("titulo").classList.toggle("largo", titulo.length > 26);
     document.getElementById("artista").textContent = artista || NOMBRE;
+    pintarCredito(pista);
+    pintarMini(titulo, artista || NOMBRE);
     temaPestana = artista ? titulo + " – " + artista : titulo;
     actualizarPestana();
 
@@ -807,7 +986,7 @@
         li.querySelector("small").textContent = a;
         lista.appendChild(li);
       });
-      if (!lista.children.length) lista.innerHTML = '<li class="vacio">Todavía no hay datos.</li>';
+      if (!lista.children.length) lista.innerHTML = '<li class="vacio">Acá vas a ver los temas que van sonando.</li>';
     }
     tiemposDelServidor(pista);
   }
@@ -835,7 +1014,7 @@
     const vacio = t => !t || /^(unknown|desconocido|n\/a|-+)$/i.test(String(t).trim());
     if (vacio(titulo)) return null;
     if (vacio(artista)) artista = "";
-    return { artista, titulo, hora, tapa: item.image || "" };
+    return { artista, titulo, hora, tapa: item.image || "", enlace: item.link || "" };
   }
 
   function buscarLista(x) {
@@ -870,7 +1049,10 @@
     lista.innerHTML = "";
     temas.slice(1, 6).forEach(t => {
       const li = document.createElement("li");
-      li.innerHTML = '<img class="mini" alt="" loading="lazy"><div><b></b><small></small></div>';
+      const enlace = enlaceSeguro(t.enlace);
+      li.innerHTML = '<img class="mini" alt="" loading="lazy">' +
+        (enlace ? '<a target="_blank" rel="noopener"><b></b><small></small></a>' : '<div><b></b><small></small></div>');
+      if (enlace) li.querySelector("a").href = enlace;
       const mini = li.querySelector("img");
       if (t.tapa) mini.src = t.tapa; else mini.removeAttribute("src");
       mini.onerror = () => mini.removeAttribute("src");
@@ -878,7 +1060,7 @@
       li.querySelector("small").textContent = [t.artista, haceCuanto(t.hora)].filter(Boolean).join(", ");
       lista.appendChild(li);
     });
-    if (!lista.children.length) lista.innerHTML = '<li class="vacio">Todavía no hay datos.</li>';
+    if (!lista.children.length) lista.innerHTML = '<li class="vacio">Acá vas a ver los temas que van sonando.</li>';
     return true;
   }
 
