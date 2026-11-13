@@ -318,40 +318,7 @@
   .c-estado.ok { font-weight: 600; }
   .c-estado.mal { color: #c0392b; }
   @media (prefers-color-scheme: dark) { .c-estado.mal { color: #ff8a7a; } }
-
-  /* ====== Mini reproductor: aparece abajo cuando el botón de play queda fuera de la pantalla ====== */
-  .minirep {
-    position: fixed; left: 50%; bottom: .75rem; z-index: 20;
-    width: min(30rem, calc(100% - 1.5rem)); transform: translate(-50%, 140%);
-    display: flex; align-items: center; gap: .8rem;
-    background: var(--tarjeta); border: 2px solid var(--linea); border-radius: 1rem;
-    padding: .55rem .7rem .55rem .9rem; box-shadow: 5px 5px 0 var(--tinta-a);
-    transition: transform .25s ease; visibility: hidden;
-  }
-  .minirep.visible { transform: translate(-50%, 0); visibility: visible; }
-  @media (prefers-reduced-motion: reduce) { .minirep { transition: none; } }
-  .minirep-texto { min-width: 0; flex: 1; line-height: 1.25; }
-  .minirep-texto b, .minirep-texto span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .minirep-texto b { font-weight: 700; font-size: .95rem; }
-  .minirep-texto span { color: var(--suave); font-size: .82rem; }
-  .minirep .play { width: 3rem; height: 3rem; box-shadow: 3px 3px 0 var(--tinta-a); }
-  .minirep .play svg { width: 1.3rem; height: 1.3rem; }
-  .minirep .play.cargando::after { width: 1.1rem; height: 1.1rem; }
-  body.con-minirep { padding-bottom: 6rem; }
-
-  footer {
-    margin-top: 2.5rem;
-    font-size: .82rem; line-height: 1.55; color: var(--suave);
-  }
-  footer a { color: var(--tinta); }
-  footer p + p { margin-top: .6rem; }
-</style>
-</head>
-<body>
-
-<div class="pagina">
-<div class="col-a">
-<header>
+  
   <!-- ====== CAMBIÁ ACÁ EL NOMBRE ====== -->
   <h1 class="marca">Indie<br>Pop</h1>
   <p class="lema">Pop independiente en español, sonando todo el día desde Uruguay.</p>
