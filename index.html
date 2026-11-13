@@ -179,7 +179,6 @@
     border-radius: .8rem; font-size: .88rem;
   }
   .despues[hidden] { display: none; }
-  .despues .mini { width: 2.2rem; height: 2.2rem; }
   .despues p { min-width: 0; line-height: 1.35; overflow-wrap: anywhere; }
   .despues-rotulo { color: var(--suave); }
   .despues b { font-weight: 600; }
@@ -249,13 +248,6 @@
     display: flex; gap: .85rem; align-items: center;
   }
   .historial li:last-child { border-bottom: 0; }
-  .mini {
-    width: 2.9rem; height: 2.9rem; flex: none; border-radius: .35rem; object-fit: cover;
-    border: 1.5px solid var(--linea);
-    /* sin tapa: una nota musical sobre el color */
-    background: var(--tinta-b) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='white' d='M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z'/></svg>") center / 55% no-repeat;
-  }
-  .historial li:nth-child(even) .mini { background-color: var(--tinta-a); }
   .historial li a { color: inherit; text-decoration: none; }
   .historial li a:hover b { text-decoration: underline; text-underline-offset: .15em; }
   .historial li a:focus-visible { outline: 2px solid var(--tinta-a); outline-offset: 2px; }
@@ -354,11 +346,6 @@
     </div>
   </div>
 
-  <div class="despues" id="despues" hidden>
-    <img class="mini" id="despues-tapa" alt="">
-    <p><span class="despues-rotulo">Después</span> <b id="despues-titulo"></b> <span id="despues-artista"></span></p>
-  </div>
-
   <div class="controles">
     <button class="play" id="play" aria-label="Escuchar">
       <svg id="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
@@ -431,14 +418,6 @@
 </div>
 </div>
 
-<!-- Mini reproductor fijo: se muestra cuando el play grande no está a la vista -->
-<div class="minirep" id="minirep" aria-hidden="true">
-  <div class="minirep-texto"><b id="mini-titulo">Indie Pop en Español</b><span id="mini-artista"></span></div>
-  <button class="play" id="mini-play" aria-label="Escuchar" tabindex="-1">
-    <svg id="mini-icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-  </button>
-</div>
-
 <audio id="audio" preload="none"></audio>
 
 <script>
@@ -451,7 +430,7 @@
   const RETRASO = 2;        // segundos que tarda el audio en llegar, cuando no se puede medir exacto
 
   const $ = id => document.getElementById(id);
-  const audio = $("audio"), caja = $("reproductor"), play = $("play"), miniPlay = $("mini-play");
+  const audio = $("audio"), caja = $("reproductor"), play = $("play");
   const ICONOS = {
     play: '<path d="M8 5v14l11-7z"/>',
     pausa: '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>',
@@ -553,7 +532,6 @@
     const s = situacion();
     const enAire = !!radio.al_aire;
     caja.classList.toggle("apagada", !enAire);
-    play.disabled = miniPlay.disabled = !enAire && !quiereEscuchar;
     $("estado").textContent = !enAire ? "Fuera del aire" : modo === "sonando" ? "Escuchando" : "En vivo";
     $("oyentes").hidden = !(radio.oyentes > 0);
     $("oyentes").textContent = radio.oyentes + (radio.oyentes === 1 ? " oyente" : " oyentes");
@@ -666,12 +644,12 @@
 
   function ponerModo(nuevo) {
     modo = nuevo;
-    for (const b of [play, miniPlay]) {
+    for (const b of [play, Play]) {
       b.classList.toggle("cargando", modo === "cargando");
       b.setAttribute("aria-busy", modo === "cargando");
       b.setAttribute("aria-label", modo === "detenido" ? "Escuchar" : "Pausar");
     }
-    $("icono").innerHTML = $("mini-icono").innerHTML = modo === "sonando" ? ICONOS.pausa : ICONOS.play;
+    $("icono").innerHTML = $("-icono").innerHTML = modo === "sonando" ? ICONOS.pausa : ICONOS.play;
     caja.classList.toggle("sonando", modo === "sonando");
     if ("mediaSession" in navigator) navigator.mediaSession.playbackState = modo === "detenido" ? "paused" : "playing";
     temaMostrado = null;      // vuelve a dibujar el tema (cambia la pestaña y lo que se muestra)
@@ -719,7 +697,6 @@
     else if (radio && radio.al_aire) { quiereEscuchar = true; reintentos = 0; decir("Conectando…"); conectar(); }
   }
   play.addEventListener("click", tocarPlay);
-  miniPlay.addEventListener("click", tocarPlay);
   audio.addEventListener("playing", () => { reintentos = 0; decir(""); ponerModo("sonando"); });
   audio.addEventListener("waiting", () => { if (quiereEscuchar) ponerModo("cargando"); });
   audio.addEventListener("error", () => { if (quiereEscuchar && audio.getAttribute("src")) reintentar(); });
@@ -752,19 +729,7 @@
   $("volumen").addEventListener("input", e => { audio.volume = e.target.value; audio.muted = false; iconoVolumen(); });
   $("silencio").addEventListener("click", () => { audio.muted = !audio.muted; iconoVolumen(); });
 
-  // ====== MINI REPRODUCTOR ======
-  // Aparece abajo cuando los controles grandes salen de la pantalla
-  if ("IntersectionObserver" in window) {
-    new IntersectionObserver(([controles]) => {
-      const mostrar = !controles.isIntersecting;
-      $("minirep").classList.toggle("visible", mostrar);
-      $("minirep").setAttribute("aria-hidden", !mostrar);
-      miniPlay.tabIndex = mostrar ? 0 : -1;
-      document.body.classList.toggle("con-minirep", mostrar);
-    }, { threshold: 0.2 }).observe(document.querySelector(".controles"));
-  }
-
-  // ====== COMPARTIR ======
+   // ====== COMPARTIR ======
   // En el celular abre WhatsApp, Instagram, etc.; en la PC copia el enlace
   $("compartir").addEventListener("click", async () => {
     const s = situacion();
