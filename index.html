@@ -141,6 +141,19 @@
   .barra.incierta .relleno { width: 0%; transition: none; }
   .progreso[hidden] { display: none; }
 
+  /* lo que va a sonar a continuación */
+  .despues {
+    display: flex; align-items: center; gap: .7rem; margin: -.6rem 0 1.3rem;
+    padding: .5rem .65rem; border: 1.5px dashed color-mix(in srgb, var(--linea) 40%, transparent);
+    border-radius: .8rem; font-size: .88rem;
+  }
+  .despues[hidden] { display: none; }
+  .despues .mini { width: 2.2rem; height: 2.2rem; }
+  .despues p { min-width: 0; line-height: 1.35; overflow-wrap: anywhere; }
+  .despues-rotulo { color: var(--suave); }
+  .despues b { font-weight: 600; }
+  #despues-artista { color: var(--suave); }
+
   .controles { display: flex; align-items: center; gap: .75rem; }
   .play {
     width: 4.4rem; height: 4.4rem; flex: none; border-radius: 50%;
@@ -253,6 +266,11 @@
       <span class="tiempo inicio" id="t-actual">0:00</span>
       <span class="tiempo final" id="t-total">--:--</span>
     </div>
+  </div>
+
+  <div class="despues" id="despues" hidden>
+    <img class="mini" id="despues-tapa" alt="">
+    <p><span class="despues-rotulo">Después</span> <b id="despues-titulo"></b> <span id="despues-artista"></span></p>
   </div>
 
   <div class="controles">
@@ -484,12 +502,28 @@
     copia.data[0].track = { artist: e.artist, title: e.title, start: empezo,
                             duration: e.duration, imageurl: e.image || "" };
     copia.historial = [Object.assign({}, e, { time: empezo })].concat(h.slice(i + 1));
+    // si el oyente está atrasado, lo que viene para él ya empezó en la radio
+    if (i > 0) copia.siguiente = { artist: h[i - 1].artist, title: h[i - 1].title, image: h[i - 1].image || "" };
     return copia;
   }
 
   function procesar(j) {
     const k = ajustarAlOyente(j);
     mostrar(k); usarHistorial({ data: [k.historial || []] });
+    mostrarSiguiente(k.siguiente);
+  }
+
+  // "Después: Título, Artista"
+  function mostrarSiguiente(t) {
+    const caja = document.getElementById("despues");
+    const vale = t && t.title && !/^unknown$/i.test(t.title);
+    caja.hidden = !vale;
+    if (!vale) return;
+    document.getElementById("despues-titulo").textContent = t.title;
+    document.getElementById("despues-artista").textContent = t.artist ? "de " + t.artist : "";
+    const img = document.getElementById("despues-tapa");
+    if (t.image) img.src = t.image; else img.removeAttribute("src");
+    img.onerror = () => img.removeAttribute("src");
   }
 
   // ====== HORA DE INTERNET ======
