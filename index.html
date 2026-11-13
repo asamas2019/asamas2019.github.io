@@ -618,8 +618,6 @@
     }, { threshold: 0.2 }).observe(document.querySelector(".controles"));
   }
 
-  // En pantallas anchas hay lugar: el formulario viene abierto
-  if (window.matchMedia("(min-width: 62rem)").matches) document.getElementById("detalle-contacto").open = true;
   audio.addEventListener("error", () => { if (quiereEscuchar && audio.getAttribute("src")) reintentar(); });
   audio.addEventListener("ended", () => { if (quiereEscuchar) reintentar(); });
   audio.addEventListener("stalled", () => {
