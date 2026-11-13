@@ -139,8 +139,15 @@
   .titulo.largo { font-size: 1.15rem; line-height: 1.18; }
   .artista { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
   .tema > div:last-child { min-width: 0; }
-  /* crédito al artista: página del tema y licencia */
-  .credito { margin-top: .35rem; font-size: .8rem; color: var(--suave); }
+  /* tipo de música y licencia del tema */
+  .credito { margin-top: .45rem; font-size: .8rem; color: var(--suave); line-height: 1.9; }
+  .genero {
+    display: inline-block; margin-right: .5rem; padding: 0 .55rem; line-height: 1.5;
+    border: 1.5px solid var(--linea); border-radius: 2rem; background: var(--tinta-a);
+    color: var(--tinta); font-weight: 600; white-space: nowrap;
+  }
+  @media (prefers-color-scheme: dark) { .genero { color: var(--papel); } }
+  .licencia { white-space: nowrap; display: inline-block; }
   .credito[hidden] { display: none; }
   .credito a { color: var(--tinta); text-underline-offset: .15em; }
   .credito a:focus-visible { outline: 2px solid var(--tinta-a); outline-offset: 2px; }
@@ -686,23 +693,25 @@
   function enlaceSeguro(url) { return /^https?:\/\//i.test(url || "") ? url : ""; }
   function pintarCredito(pista) {
     const p = document.getElementById("credito");
-    const enlace = enlaceSeguro(pista.link), lic = nombreLicencia(pista.license);
+    const genero = String(pista.genre || "").trim(), lic = nombreLicencia(pista.license);
     p.textContent = "";
-    p.hidden = !enlace && !lic;
-    if (enlace) {
-      const a = document.createElement("a");
-      a.href = enlace; a.target = "_blank"; a.rel = "noopener";
-      a.textContent = /archive\.org/.test(enlace) ? "Ver en Internet Archive" : "Ver en Jamendo";
-      p.appendChild(a);
+    p.hidden = !genero && !lic;
+    if (genero) {
+      const g = document.createElement("span");
+      g.className = "genero"; g.textContent = genero;
+      p.appendChild(g);
     }
     if (lic) {
       const licUrl = enlaceSeguro(pista.license);
-      p.appendChild(document.createTextNode(enlace ? ", licencia " : "Licencia "));
+      const caja = document.createElement("span");
+      caja.className = "licencia";                  // "Licencia CC…" no se parte en dos renglones
+      caja.appendChild(document.createTextNode("Licencia "));
       if (licUrl) {
         const a = document.createElement("a");
         a.href = licUrl; a.target = "_blank"; a.rel = "noopener license"; a.textContent = lic;
-        p.appendChild(a);
-      } else p.appendChild(document.createTextNode(lic));
+        caja.appendChild(a);
+      } else caja.appendChild(document.createTextNode(lic));
+      p.appendChild(caja);
     }
   }
 
@@ -753,7 +762,7 @@
     const copia = JSON.parse(JSON.stringify(j));
     copia.data[0].track = { artist: e.artist, title: e.title, start: empezo,
                             duration: e.duration, imageurl: e.image || "",
-                            link: e.link || "", license: e.license || "" };
+                            link: e.link || "", license: e.license || "", genre: e.genre || "" };
     copia.historial = [Object.assign({}, e, { time: empezo })].concat(h.slice(i + 1));
     // si el oyente está atrasado, lo que viene para él ya empezó en la radio
     if (i > 0) copia.siguiente = { artist: h[i - 1].artist, title: h[i - 1].title, image: h[i - 1].image || "" };
