@@ -77,10 +77,10 @@
   /* grano de papel impreso */
   body::before {
     content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 10;
-    opacity: var(--grano); mix-blend-mode: multiply;
+    opacity: var(--grano);   /* sin mezcla de capas: más liviano al desplazar en celulares */
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
   }
-  @media (prefers-color-scheme: dark) { body::before { mix-blend-mode: screen; } }
+  @media (prefers-color-scheme: dark) { body::before { filter: invert(1); } }
 
   /* ====== El nombre: impreso con dos tintas desfasadas ====== */
   header { margin-bottom: 1.75rem; }
@@ -480,7 +480,7 @@
   const NOMBRE = "Indie Pop en Español";                    // se ve en la pestaña y en el celular bloqueado
   const CALIDAD = "AAC 96 kbps";                            // cambialo si cambiás RADIO_KBPS o RADIO_FORMATO
   const CLAVE_FORMULARIO = "c95b3452-d4e7-4f9d-bb91-0bf53b30503e";   // Web3Forms: adónde llegan los mensajes
-  const CADA_CUANTO = 10;   // segundos entre consultas a la radio
+  const CADA_CUANTO = 20;   // segundos entre consultas a la radio (al terminar un tema consulta enseguida)
   const RETRASO = 2;        // segundos que tarda el audio en llegar, cuando no se puede medir exacto
 
   const $ = id => document.getElementById(id);
@@ -568,9 +568,17 @@
     const min = Math.round((desde - hora) / 60);
     return min < 1 ? "recién" : min < 60 ? "hace " + min + " min" : "hace " + Math.round(min / 60) + " h";
   }
+  // Jamendo entrega las tapas del ancho que se le pida: las miniaturas no bajan la imagen grande
+  const tapaChica = url => String(url || "").replace(/([?&]width=)\d+/, "$1100");
+  // Pone una imagen; si no hay o no carga, queda el dibujo de fondo (la nota musical)
+  function ponerImagen(img, url, alFallar) {
+    img.onerror = () => { img.onerror = null; img.removeAttribute("src"); if (alFallar) alFallar(); };
+    if (url && !/nocover/i.test(url)) img.src = url;
+    else img.removeAttribute("src");
+  }
   function ponerTapa(img, url) {
-    if (url && !/nocover/i.test(url)) { img.src = url; img.hidden = false; }
-    else { img.removeAttribute("src"); img.hidden = true; }
+    img.hidden = !(url && !/nocover/i.test(url));
+    ponerImagen(img, url, () => { img.hidden = true; });
   }
 
   function dibujar() {
@@ -646,9 +654,7 @@
     if (!tema || !tema.title) return;
     $("despues-titulo").textContent = tema.title;
     $("despues-artista").textContent = tema.artist ? "de " + tema.artist : "";
-    const img = $("despues-tapa");
-    if (tema.image) img.src = tema.image; else img.removeAttribute("src");
-    img.onerror = () => img.removeAttribute("src");
+    ponerImagen($("despues-tapa"), tapaChica(tema.image));
   }
 
   function dibujarBarra(s) {
@@ -680,9 +686,7 @@
       li.innerHTML = '<img class="mini" alt="" loading="lazy">' +
         (enlace ? '<a target="_blank" rel="noopener"><b></b><small></small></a>' : "<div><b></b><small></small></div>");
       if (enlace) li.querySelector("a").href = enlace;
-      const mini = li.querySelector("img");
-      if (t.image) mini.src = t.image;
-      mini.onerror = () => mini.removeAttribute("src");
+      ponerImagen(li.querySelector("img"), tapaChica(t.image));
       li.querySelector("b").textContent = t.title;
       li.querySelector("small").textContent = [t.artist, haceCuanto(t.time, desde)].filter(Boolean).join(", ");
       lista.appendChild(li);
@@ -842,10 +846,13 @@
   $("calidad").textContent = CALIDAD;
   audio.volume = 1;
   consultar();
-  // Consulta cada 10 s; con la pestaña escondida no consulta (ahorra servidor y batería)
+  // Con la pestaña escondida no consulta ni dibuja (ahorra servidor y batería)
   setInterval(() => { if (!document.hidden) consultar(); }, CADA_CUANTO * 1000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) consultar(); });
-  setInterval(dibujar, 500);    // la barra avanza y el tema cambia justo cuando cambia el audio
+  // La barra avanza y el tema cambia justo cuando cambia el audio. Con la pestaña escondida
+  // alcanza con una vez cada tanto, para que el título de la pestaña y del celular siga al día.
+  let pasos = 0;
+  setInterval(() => { if (!document.hidden || ++pasos % 6 === 0) dibujar(); }, 500);
 </script>
 </body>
 </html>
