@@ -371,7 +371,6 @@
     <div class="estado"><span class="punto" aria-hidden="true"></span><span id="estado">Consultando la radio…</span></div>
     <div class="etiquetas">
       <span class="calidad" id="oyentes" title="Personas escuchando ahora" hidden></span>
-      <span class="calidad" id="calidad" title="Calidad de audio de la transmisión">MP3</span>
     </div>
   </div>
 
@@ -487,7 +486,6 @@
   // ====== DATOS DE TU RADIO ======
   const RADIO = "https://indiepop.agst5474.workers.dev";   // tu radio en Cloudflare (antes: https://radio-render-ey3i.onrender.com)
   const NOMBRE = "Indie Pop en Español";                    // se ve en la pestaña y en el celular bloqueado
-  const CALIDAD = "MP3";    // se usa hasta que la radio informa su calidad (después se actualiza sola)
   const CLAVE_FORMULARIO = "c95b3452-d4e7-4f9d-bb91-0bf53b30503e";   // Web3Forms: adónde llegan los mensajes
   const CADA_CUANTO = 20;   // segundos entre consultas a la radio (al terminar un tema consulta enseguida)
   const RETRASO = 2;        // segundos que tarda el audio en llegar, cuando no se puede medir exacto
@@ -555,7 +553,6 @@
       if (miId && typeof j.mi_inicio === "number") miInicio = j.mi_inicio;
       radio = j;
       datosVigentes = true;
-      if (j.calidad) $("calidad").textContent = j.calidad;     // la radio dice en qué calidad transmite
       $("conexion").textContent = j.al_aire ? "" : "La transmisión no está disponible. Volveremos a consultar automáticamente.";
       $("reconsultar").hidden = j.al_aire;
     } catch (error) {
@@ -933,7 +930,6 @@
   });
 
   // ====== ARRANQUE ======
-  $("calidad").textContent = CALIDAD;
   audio.volume = 1;
   consultar();
   // Con la pestaña escondida no consulta ni dibuja (ahorra servidor y batería)
