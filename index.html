@@ -326,6 +326,11 @@
   footer a { color: var(--tinta); }
   footer p + p { margin-top: .6rem; }
 
+  /* "Escuchar en tu app": baja una lista .m3u con la dirección del audio */
+  .en-app { margin-top: .9rem; font-size: .85rem; color: var(--suave); }
+  .en-app a { color: var(--tinta); font-weight: 600; text-underline-offset: .15em; }
+  .en-app a:focus-visible { outline: 2px solid var(--tinta-a); outline-offset: 2px; }
+
   /* Mejoras de uso: controles, lectura y estados de conexión. */
   .solo-lector { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .controles { flex-wrap: wrap; margin: 0 0 1.3rem; }
@@ -372,7 +377,7 @@
     <div class="estado"><span class="punto" aria-hidden="true"></span><span id="estado">Consultando la radio…</span></div>
     <div class="etiquetas">
       <span class="calidad" id="oyentes" title="Personas escuchando ahora" hidden></span>
-      <span class="calidad" id="calidad" title="Calidad de audio de la transmisión">Calidad: AAC+ 96 kbps</span>
+      <span class="calidad" id="calidad" title="Calidad de audio de la transmisión">AAC+</span>
     </div>
   </div>
 
@@ -423,6 +428,10 @@
 
 
   <p class="aviso" id="aviso" role="status"></p>
+  <p class="en-app">
+    <a href="#" id="en-app" download="indie-pop-en-espanol.m3u">Escuchar en tu app</a>
+    <span>(VLC, Winamp, el auto o la app de radio del celular)</span>
+  </p>
   <div class="conexion" role="status"><span id="conexion">Consultando la radio…</span>
     <button type="button" id="reconsultar" hidden>Reintentar</button>
   </div>
@@ -489,7 +498,7 @@
   // ====== DATOS DE TU RADIO ======
   const RADIO = "https://radio-render-ey3i.onrender.com";   // tu radio en Render
   const NOMBRE = "Indie Pop en Español";                    // se ve en la pestaña y en el celular bloqueado
-  const CALIDAD = "AAC+ 96 kbps";                            // cambialo si cambiás RADIO_KBPS o RADIO_FORMATO
+  const CALIDAD = "AAC+";   // se usa hasta que la radio informa su calidad (después se actualiza sola)
   const CLAVE_FORMULARIO = "c95b3452-d4e7-4f9d-bb91-0bf53b30503e";   // Web3Forms: adónde llegan los mensajes
   const CADA_CUANTO = 20;   // segundos entre consultas a la radio (al terminar un tema consulta enseguida)
   const RETRASO = 2;        // segundos que tarda el audio en llegar, cuando no se puede medir exacto
@@ -551,6 +560,7 @@
       if (miId && typeof j.mi_inicio === "number") miInicio = j.mi_inicio;
       radio = j;
       datosVigentes = true;
+      if (j.calidad) $("calidad").textContent = j.calidad;     // la radio dice en qué calidad transmite
       $("conexion").textContent = j.al_aire ? "" : "La transmisión no está disponible. Volveremos a consultar automáticamente.";
       $("reconsultar").hidden = j.al_aire;
     } catch (error) {
@@ -887,6 +897,7 @@
 
   // ====== ARRANQUE ======
   $("calidad").textContent = CALIDAD;
+  $("en-app").href = RADIO + "/radio.m3u";      // lista para abrir la radio en otras apps
   audio.volume = 1;
   consultar();
   // Con la pestaña escondida no consulta ni dibuja (ahorra servidor y batería)
