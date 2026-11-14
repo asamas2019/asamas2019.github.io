@@ -140,7 +140,7 @@
   .titulo.largo { font-size: 1.15rem; line-height: 1.18; }
   .artista { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
   .tema > div:last-child { min-width: 0; }
-  /* tipo de música y licencia del tema */
+  /* tipo de música del tema */
   .credito { margin-top: .45rem; font-size: .8rem; color: var(--suave); line-height: 1.9; }
   .genero {
     display: inline-block; margin-right: .5rem; padding: 0 .55rem; line-height: 1.5;
@@ -148,7 +148,6 @@
     color: var(--tinta); font-weight: 600; white-space: nowrap;
   }
   @media (prefers-color-scheme: dark) { .genero { color: var(--papel); } }
-  .licencia { white-space: nowrap; display: inline-block; }
   .credito[hidden] { display: none; }
   .credito a { color: var(--tinta); text-underline-offset: .15em; }
   .credito a:focus-visible { outline: 2px solid var(--tinta-a); outline-offset: 2px; }
@@ -533,10 +532,6 @@
   // ====== DIBUJAR ======
   const reloj = seg => { seg = Math.max(0, Math.floor(seg)); return Math.floor(seg / 60) + ":" + String(seg % 60).padStart(2, "0"); };
   const enlaceSeguro = url => /^https?:\/\//i.test(url || "") ? url : "";
-  function nombreLicencia(url) {
-    const m = /creativecommons\.org\/(licenses|publicdomain)\/([a-z-]+)/i.exec(url || "");
-    return !m ? "" : m[1] === "publicdomain" ? "dominio público" : "CC " + m[2].toUpperCase();
-  }
   function haceCuanto(hora, desde) {
     const min = Math.round((desde - hora) / 60);
     return min < 1 ? "recién" : min < 60 ? "hace " + min + " min" : "hace " + Math.round(min / 60) + " h";
@@ -594,29 +589,16 @@
     }
   }
 
-  // Tipo de música y licencia del tema
+  // Etiqueta con el tipo de música del tema
   function dibujarCredito(tema) {
     const p = $("credito");
     const genero = tema ? String(tema.genre || "").trim() : "";
-    const licencia = tema ? nombreLicencia(tema.license) : "";
     p.textContent = "";
-    p.hidden = !genero && !licencia;
+    p.hidden = !genero;
     if (genero) {
       const etiqueta = document.createElement("span");
       etiqueta.className = "genero"; etiqueta.textContent = genero;
       p.appendChild(etiqueta);
-    }
-    if (licencia) {
-      const caja = document.createElement("span");
-      caja.className = "licencia";
-      caja.append("Licencia ");
-      const url = enlaceSeguro(tema.license);
-      if (url) {
-        const a = document.createElement("a");
-        a.href = url; a.target = "_blank"; a.rel = "noopener license"; a.textContent = licencia;
-        caja.appendChild(a);
-      } else caja.append(licencia);
-      p.appendChild(caja);
     }
   }
 
