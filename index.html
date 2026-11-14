@@ -334,7 +334,6 @@
   .play.cargando::after { flex: none; }
   .volumen { margin-left: 0; }
   .compartir { margin-left: auto; }
-  .rotulo-progreso { font-size: .78rem; color: var(--suave); margin-bottom: .4rem; }
   .barra { background: var(--tarjeta); }
   .tiempo { background: var(--tarjeta); color: var(--tinta); padding: 0 .25rem; border-radius: .2rem; }
   @media (prefers-color-scheme: dark) { .relleno ~ .tiempo.inicio { color: var(--tinta); } }
@@ -407,7 +406,6 @@
 
 
   <div class="progreso" id="progreso" hidden>
-    <p class="rotulo-progreso">Avance del tema · transmisión en vivo</p>
     <div class="barra" id="barra" role="progressbar" aria-label="Avance de la canción"
          aria-valuemin="0" aria-valuemax="100">
       <span class="relleno" id="relleno"></span>
