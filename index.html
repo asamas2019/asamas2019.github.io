@@ -65,7 +65,7 @@
      el reproductor a la izquierda (queda fijo al bajar) y el resto a la derecha. */
   .pagina { display: flex; flex-direction: column; align-items: center; }
   .col-a, .col-b { width: 100%; max-width: 30rem; }
-  @media (min-width: 62rem) {
+  @media (min-width: 64rem) {
     .pagina {
       display: grid; grid-template-columns: 30rem 27rem; gap: 0 4.5rem;
       justify-content: center; align-items: start;
@@ -203,7 +203,8 @@
   }
   @keyframes girar { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) {
-    .play.cargando::after, .sonando .punto { animation-duration: 3s; }
+    .sonando .punto { animation: none; }
+    .play.cargando::after { animation: none; }
     .play, .relleno { transition: none; }
   }
   .volumen { margin-left: auto; display: flex; align-items: center; gap: .3rem; }
@@ -324,6 +325,39 @@
   }
   footer a { color: var(--tinta); }
   footer p + p { margin-top: .6rem; }
+
+  /* Mejoras de uso: controles, lectura y estados de conexión. */
+  .solo-lector { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .controles { flex-wrap: wrap; margin: 0 0 1.3rem; }
+  .play { width: auto; min-height: 3.5rem; height: auto; padding: .7rem 1rem; border-radius: 2rem; display: inline-flex; gap: .5rem; font: 700 .95rem "Inter", sans-serif; }
+  .play svg { flex: none; width: 1.5rem; height: 1.5rem; }
+  .play.cargando::after { flex: none; }
+  .volumen { margin-left: 0; }
+  .compartir { margin-left: auto; }
+  .rotulo-progreso { font-size: .78rem; color: var(--suave); margin-bottom: .4rem; }
+  .barra { background: var(--tarjeta); }
+  .tiempo { background: var(--tarjeta); color: var(--tinta); padding: 0 .25rem; border-radius: .2rem; }
+  @media (prefers-color-scheme: dark) { .relleno ~ .tiempo.inicio { color: var(--tinta); } }
+  .conexion { font-size: .88rem; color: var(--suave); }
+  .conexion:has(#conexion:empty):has(#reconsultar[hidden]) { display: none; }
+  #reconsultar { margin-top: .5rem; min-height: 2.75rem; padding: .4rem .9rem; background: var(--tarjeta); color: var(--tinta); border: 2px solid var(--linea); border-radius: 2rem; font: inherit; cursor: pointer; }
+  #reconsultar:focus-visible, .detalle-tema summary:focus-visible, .detalle-tema a:focus-visible { outline: 3px solid var(--tinta-b); outline-offset: 3px; }
+  #reconsultar[hidden] { display: none; }
+  .detalle-tema { margin-top: 1rem; font-size: .88rem; overflow-wrap: anywhere; }
+  .detalle-tema summary { cursor: pointer; min-height: 2.75rem; padding: .5rem 0; }
+  .detalle-tema a { display: inline-block; padding: .5rem 0; color: var(--tinta); }
+  #enlace-compartir { width: 100%; padding: .7rem; font: inherit; background: var(--tarjeta); color: var(--tinta); border: 2px solid var(--linea); border-radius: .4rem; }
+  @media (max-width: 26rem) {
+    body { padding-top: 1.25rem; }
+    header { margin-bottom: 1.25rem; }
+    .marca { font-size: clamp(3rem, 14vw, 4rem); }
+    .tema { margin: 1.1rem 0; gap: .85rem; }
+    .tapa { width: 4.5rem; height: 4.5rem; }
+    .play { width: 100%; justify-content: center; }
+    .volumen { flex: 1; }
+    .compartir span { display: inline; }
+    .compartir { padding: 0 .8rem; }
+  }
 </style>
 </head>
 <body>
@@ -338,7 +372,7 @@
 
 <main class="reproductor" id="reproductor">
   <div class="cabecera">
-    <div class="estado"><span class="punto"></span><span id="estado">En vivo</span></div>
+    <div class="estado"><span class="punto" aria-hidden="true"></span><span id="estado">Consultando la radio…</span></div>
     <div class="etiquetas">
       <span class="calidad" id="oyentes" title="Personas escuchando ahora" hidden></span>
       <span class="calidad" id="calidad" title="Calidad de audio de la transmisión">Calidad: AAC+ 96 kbps</span>
@@ -357,23 +391,10 @@
     </div>
   </div>
 
-  <div class="progreso" id="progreso" hidden>
-    <div class="barra" id="barra" role="progressbar" aria-label="Avance de la canción"
-         aria-valuemin="0" aria-valuemax="100">
-      <span class="relleno" id="relleno"></span>
-      <span class="tiempo inicio" id="t-actual">0:00</span>
-      <span class="tiempo final" id="t-total">--:--</span>
-    </div>
-  </div>
-
-  <div class="despues" id="despues" hidden>
-    <img class="mini" id="despues-tapa" alt="">
-    <p><span class="despues-rotulo">Después</span> <b id="despues-titulo"></b> <span id="despues-artista"></span></p>
-  </div>
-
   <div class="controles">
-    <button class="play" id="play" aria-label="Escuchar">
+    <button class="play" id="play" aria-label="Escuchar en vivo">
       <svg id="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+      <span id="play-texto">Escuchar en vivo</span>
     </button>
     <div class="volumen">
       <button class="silencio" id="silencio" aria-label="Silenciar">
@@ -387,7 +408,33 @@
     </button>
   </div>
 
+
+  <div class="progreso" id="progreso" hidden>
+    <p class="rotulo-progreso">Avance del tema · transmisión en vivo</p>
+    <div class="barra" id="barra" role="progressbar" aria-label="Avance de la canción"
+         aria-valuemin="0" aria-valuemax="100">
+      <span class="relleno" id="relleno"></span>
+      <span class="tiempo inicio" id="t-actual">0:00</span>
+      <span class="tiempo final" id="t-total">--:--</span>
+    </div>
+  </div>
+
+  <div class="despues" id="despues" hidden>
+    <img class="mini" id="despues-tapa" alt="">
+    <p><span class="despues-rotulo">Después</span> <b id="despues-titulo"></b> <span id="despues-artista"></span></p>
+  </div>
+
+
   <p class="aviso" id="aviso" role="status"></p>
+  <div class="conexion" role="status"><span id="conexion">Consultando la radio…</span>
+    <button type="button" id="reconsultar" hidden>Reintentar</button>
+  </div>
+  <p class="solo-lector" id="anuncio-tema" role="status" aria-live="polite" aria-atomic="true"></p>
+  <details class="detalle-tema" id="detalle-tema" hidden>
+    <summary>Ver canción y artista</summary>
+    <p id="tema-completo"></p>
+    <a id="enlace-artista" target="_blank" rel="noopener" hidden>Conocer al artista ↗</a>
+  </details>
 </main>
 </div>
 
@@ -459,7 +506,7 @@
   const audio = $("audio"), caja = $("reproductor"), play = $("play");
   const ICONOS = {
     play: '<path d="M8 5v14l11-7z"/>',
-    pausa: '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>',
+    pausa: '<path d="M6 6h12v12H6z"/>',
     volumen: '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4z"/>',
     mudo: '<path d="M3 9v6h4l5 5V4L7 9H3zm13.6 3 2.7-2.7-1.4-1.4-2.7 2.7-2.7-2.7-1.4 1.4 2.7 2.7-2.7 2.7 1.4 1.4 2.7-2.7 2.7 2.7 1.4-1.4z"/>'
   };
@@ -473,6 +520,7 @@
   let reintentos = 0, espera = null;
   let temaMostrado = null;      // clave del tema que está dibujado
   let ultimaConsulta = 0;
+  let consultaPendiente = false, datosVigentes = false;
 
   // ====== HORA DE INTERNET ======
   // Los tiempos se calculan con la hora del servidor, no con la del celular o la PC.
@@ -488,23 +536,45 @@
   }
 
   // ====== CONSULTAR A LA RADIO ======
-  function consultar() {
+  async function consultar() {
+    if (consultaPendiente) return;
+    consultaPendiente = true;
     const salio = Date.now();
     ultimaConsulta = salio;
-    fetch(RADIO + "/ahora" + (miId ? "?id=" + miId : ""), { cache: "no-store" })
-      .then(r => r.json())
-      .then(j => {
-        ajustarReloj(j.ahora, salio, Date.now());
-        if (j.al_aire === undefined && j.data) {          // servidor de la versión anterior
-          j.al_aire = j.data[0].server === "Online";
-          j.actual = j.al_aire ? (j.historial || [])[0] || null : null;
-        }
-        if (miId && typeof j.mi_inicio === "number") miInicio = j.mi_inicio;
-        radio = j;
-        dibujar();
-      })
-      .catch(() => {});
+    const control = new AbortController();
+    const limite = setTimeout(() => control.abort(), 12000);
+    $("reconsultar").disabled = true;
+    try {
+      const respuesta = await fetch(RADIO + "/ahora" + (miId ? "?id=" + miId : ""), {
+        cache: "no-store", signal: control.signal
+      });
+      if (!respuesta.ok) throw new Error("Respuesta no disponible");
+      const j = await respuesta.json();
+      if (j.al_aire === undefined && j.data && j.data[0]) {
+        j.al_aire = j.data[0].server === "Online";
+        j.actual = j.al_aire ? (j.historial || [])[0] || null : null;
+      }
+      if (typeof j.al_aire !== "boolean") throw new Error("Estado no disponible");
+      ajustarReloj(j.ahora, salio, Date.now());
+      if (miId && typeof j.mi_inicio === "number") miInicio = j.mi_inicio;
+      radio = j;
+      datosVigentes = true;
+      $("conexion").textContent = j.al_aire ? "" : "La transmisión no está disponible. Volveremos a consultar automáticamente.";
+      $("reconsultar").hidden = j.al_aire;
+    } catch (error) {
+      datosVigentes = false;
+      $("conexion").textContent = modo === "sonando"
+        ? "El audio continúa. No podemos actualizar los datos de la canción."
+        : "No podemos consultar la radio. Podés intentar escuchar el directo o reintentar.";
+      $("reconsultar").hidden = false;
+    } finally {
+      clearTimeout(limite);
+      consultaPendiente = false;
+      $("reconsultar").disabled = false;
+      dibujar();
+    }
   }
+  $("reconsultar").addEventListener("click", consultar);
 
   // ====== QUÉ TEMA ESCUCHA ESTE OYENTE ======
   // Lo que suena en este navegador es miInicio + lo que lleva reproducido. Con eso se busca
@@ -550,13 +620,16 @@
   }
 
   function dibujar() {
-    if (!radio) return;
+    if (!radio) {
+      $("estado").textContent = modo === "sonando" ? "Escuchando" : modo === "cargando" ? "Conectando…" : consultaPendiente ? "Consultando la radio…" : "Estado sin confirmar";
+      return;
+    }
     const s = situacion();
     const enAire = !!radio.al_aire;
     caja.classList.toggle("apagada", !enAire);
-    play.disabled = !enAire && !quiereEscuchar;
-    $("estado").textContent = !enAire ? "Fuera del aire" : modo === "sonando" ? "Escuchando" : "En vivo";
-    $("oyentes").hidden = !(radio.oyentes > 0);
+    play.disabled = false;
+    $("estado").textContent = modo === "sonando" ? "Escuchando" : modo === "cargando" ? "Conectando…" : !datosVigentes ? "Estado sin confirmar" : !enAire ? "Fuera del aire" : "En vivo";
+    $("oyentes").hidden = !datosVigentes || !(radio.oyentes > 0);
     $("oyentes").textContent = radio.oyentes + (radio.oyentes === 1 ? " oyente" : " oyentes");
 
     const clave = s ? s.tema.pos + "|" + s.tema.title : enAire ? "esperando" : "apagada";
@@ -573,12 +646,20 @@
     const tema = s && s.tema;
     const titulo = tema ? tema.title : NOMBRE;
     const artista = tema ? tema.artist || NOMBRE
-                  : enAire ? "Tocá play para escuchar" : "La radio está arrancando. Vuelve sola en unos minutos.";
+                  : enAire ? "Tocá play para escuchar" : "La transmisión no está disponible. Podés intentar conectar nuevamente.";
     $("titulo").textContent = titulo;
     $("titulo").classList.toggle("largo", titulo.length > 26);
     $("artista").textContent = artista;
     ponerTapa($("tapa"), tema && tema.image);
     dibujarCredito(tema);
+    $("detalle-tema").hidden = !tema;
+    $("tema-completo").textContent = tema ? titulo + (tema.artist ? " — " + tema.artist : "") : "";
+    const enlace = enlaceSeguro(tema && tema.link);
+    $("enlace-artista").hidden = !enlace;
+    if (enlace) $("enlace-artista").href = enlace;
+    else $("enlace-artista").removeAttribute("href");
+    const anuncio = tema ? "Ahora: " + titulo + (tema.artist ? ", de " + tema.artist : "") : "";
+    if ($("anuncio-tema").textContent !== anuncio) $("anuncio-tema").textContent = anuncio;
     dibujarSiguiente(s && s.siguiente);
     document.title = tema ? (modo === "sonando" ? "▶ " : "") + titulo + (tema.artist ? " – " + tema.artist : "") + " | " + NOMBRE : NOMBRE;
     if ("mediaSession" in navigator && window.MediaMetadata) {
@@ -611,7 +692,7 @@
   }
 
   function dibujarBarra(s) {
-    $("progreso").hidden = !s;
+    $("progreso").hidden = !s || !datosVigentes;
     if (!s) return;
     const dura = Number(s.tema.duration) || 0;
     const pasado = Math.max(0, Math.min(s.pasado, dura || s.pasado));
@@ -621,7 +702,7 @@
     $("relleno").style.width = pct + "%";
     $("barra").setAttribute("aria-valuenow", Math.round(pct));
     // terminó el tema y todavía no llegó el siguiente: pregunta enseguida (como mucho cada 2 s)
-    if (dura && s.pasado >= dura && Date.now() - ultimaConsulta > 2000) consultar();
+    if (datosVigentes && dura && s.pasado >= dura && Date.now() - ultimaConsulta > 2000) consultar();
   }
 
   let historialMostrado = "";
@@ -632,18 +713,27 @@
     if (firma === historialMostrado) return;
     historialMostrado = firma;
     const lista = $("lista");
-    lista.textContent = "";
-    for (const t of temas) {
-      const li = document.createElement("li");
-      const enlace = enlaceSeguro(t.link);
-      li.innerHTML = '<img class="mini" alt="" loading="lazy">' +
-        (enlace ? '<a target="_blank" rel="noopener"><b></b><small></small></a>' : "<div><b></b><small></small></div>");
-      if (enlace) li.querySelector("a").href = enlace;
-      ponerImagen(li.querySelector("img"), tapaChica(t.image));
-      li.querySelector("b").textContent = t.title;
+    const existentes = new Map(Array.from(lista.children).filter(li => li.dataset.clave).map(li => [li.dataset.clave, li]));
+    lista.querySelectorAll(".vacio").forEach(li => li.remove());
+    const conservados = new Set();
+    temas.forEach((t, indice) => {
+      const clave = String(t.pos) + "|" + t.title;
+      let li = existentes.get(clave);
+      if (!li) {
+        li = document.createElement("li");
+        li.dataset.clave = clave;
+        const enlace = enlaceSeguro(t.link);
+        li.innerHTML = '<img class="mini" alt="" loading="lazy">' +
+          (enlace ? '<a target="_blank" rel="noopener"><b></b><small></small></a>' : '<div><b></b><small></small></div>');
+        if (enlace) li.querySelector("a").href = enlace;
+        ponerImagen(li.querySelector("img"), tapaChica(t.image));
+        li.querySelector("b").textContent = t.title;
+      }
       li.querySelector("small").textContent = [t.artist, haceCuanto(t.time, desde)].filter(Boolean).join(", ");
-      lista.appendChild(li);
-    }
+      if (lista.children[indice] !== li) lista.insertBefore(li, lista.children[indice] || null);
+      conservados.add(li);
+    });
+    Array.from(lista.children).forEach(li => { if (!conservados.has(li)) li.remove(); });
     if (!temas.length) lista.innerHTML = '<li class="vacio">Acá vas a ver los temas que van sonando.</li>';
   }
 
@@ -654,7 +744,9 @@
     modo = nuevo;
     play.classList.toggle("cargando", modo === "cargando");
     play.setAttribute("aria-busy", modo === "cargando");
-    play.setAttribute("aria-label", modo === "detenido" ? "Escuchar" : "Pausar");
+    const etiqueta = modo === "detenido" ? "Escuchar en vivo" : "Detener";
+    play.setAttribute("aria-label", etiqueta);
+    $("play-texto").textContent = modo === "cargando" ? "Detener conexión" : etiqueta;
     $("icono").innerHTML = modo === "sonando" ? ICONOS.pausa : ICONOS.play;
     caja.classList.toggle("sonando", modo === "sonando");
     if ("mediaSession" in navigator) navigator.mediaSession.playbackState = modo === "detenido" ? "paused" : "playing";
@@ -700,7 +792,7 @@
 
   function tocarPlay() {
     if (quiereEscuchar) detener();
-    else if (radio && radio.al_aire) { quiereEscuchar = true; reintentos = 0; decir("Conectando…"); conectar(); }
+    else { quiereEscuchar = true; reintentos = 0; decir("Conectando…"); conectar(); }
   }
   play.addEventListener("click", tocarPlay);
   audio.addEventListener("playing", () => { reintentos = 0; decir(""); ponerModo("sonando"); });
@@ -765,7 +857,17 @@
       await navigator.clipboard.writeText(url);
       decir("Enlace copiado. ¡Pegalo donde quieras compartirlo!");
       setTimeout(() => { if ($("aviso").textContent.startsWith("Enlace copiado")) decir(""); }, 4000);
-    } catch (e) { /* cerró el menú de compartir */ }
+    } catch (e) {
+      if (e && e.name === "AbortError") return;
+      decir("No se pudo compartir automáticamente. Copiá este enlace:");
+      let campo = $("enlace-compartir");
+      if (!campo) {
+        campo = document.createElement("input"); campo.id = "enlace-compartir";
+        campo.readOnly = true; campo.setAttribute("aria-label", "Enlace de la radio para copiar");
+        $("aviso").after(campo);
+      }
+      campo.value = url; campo.hidden = false; campo.focus(); campo.select();
+    }
   });
 
   // ====== ESCRIBINOS (los mensajes llegan por correo con Web3Forms) ======
