@@ -93,9 +93,9 @@
       $("render").textContent = d.render === null ? "–" : d.render;
       $("render-texto").textContent = d.render === null
         ? "Render no respondió (dormido o fuera del aire)" : "en TuneIn y directorios (Render)";
-      $("estado").textContent = "Actualizado a las " + new Date().toLocaleTimeString("es-UY", { hour12: false }) + ". Se actualiza solo cada " + CADA + " segundos.";
+      $("estado").textContent = "";
     } catch (e) {
-      $("estado").textContent = "No se pudo consultar la radio. Se vuelve a intentar en " + CADA + " segundos.";
+      $("estado").textContent = "No se pudo consultar la radio. Reintentando…";
     }
   }
   consultar();
