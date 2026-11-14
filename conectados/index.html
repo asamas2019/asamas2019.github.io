@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oyentes conectados · Indie Pop en Español</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#e6efec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1a24" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..900;1,14..32,800..900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --papel: #e6efec; --tarjeta: #f5faf8; --tinta: #13233a; --suave: #4c5d6b;
+    --tinta-a: #00b37a; --tinta-b: #2f5bff; --linea: #13233a; --grano: .09;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --papel: #0f1a24; --tarjeta: #162532; --tinta: #e6f4ef; --suave: #9db3b0;
+      --tinta-a: #2ee6a1; --tinta-b: #6d8dff; --linea: #e6f4ef; --grano: .06;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    min-height: 100vh; background: var(--papel); color: var(--tinta);
+    font-family: "Inter", system-ui, sans-serif; line-height: 1.5;
+    padding: 2.25rem 1rem 3rem; overflow-x: hidden;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 10; opacity: var(--grano);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+  }
+  @media (prefers-color-scheme: dark) { body::before { filter: invert(1); } }
+  main { max-width: 30rem; margin: 0 auto; }
+  .volver { color: var(--suave); font-weight: 600; text-decoration: none; }
+  .volver:hover, .volver:focus-visible { color: var(--tinta); text-decoration: underline; }
+  h1 {
+    font-family: "Inter Display", "Inter", sans-serif; font-weight: 900; font-style: italic;
+    font-size: clamp(2.4rem, 11vw, 3.4rem); line-height: .9; letter-spacing: -.05em;
+    text-shadow: -.045em .03em 0 var(--tinta-a), .04em -.025em 0 var(--tinta-b);
+    margin: 1.25rem 0 1.75rem;
+  }
+  .tarjeta {
+    background: var(--tarjeta); border: 2px solid var(--linea); border-radius: 1.25rem;
+    padding: 1.4rem; box-shadow: 7px 7px 0 var(--tinta-a);
+  }
+  /* el total, grande como un número de afiche */
+  .total {
+    font-family: "Inter Display", "Inter", sans-serif; font-weight: 900;
+    font-size: clamp(4.5rem, 26vw, 7rem); line-height: .9; letter-spacing: -.05em;
+    font-variant-numeric: tabular-nums;
+  }
+  .que { font-weight: 600; margin-top: .35rem; }
+  .partes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.4rem; padding-top: 1.2rem; border-top: 2px solid var(--linea); }
+  .partes b { display: block; font-size: 1.7rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .partes span { color: var(--suave); font-size: .92rem; line-height: 1.3; display: block; }
+  h2 { font-size: 1.15rem; font-weight: 800; margin: 2.2rem 0 .6rem; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: .85rem; color: var(--suave); font-weight: 600; padding: 0 .25rem .4rem; }
+  td { padding: .55rem .25rem; border-top: 1.5px solid color-mix(in srgb, var(--tinta) 18%, transparent); }
+  td:last-child, th:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+  .nota { color: var(--suave); font-size: .9rem; margin-top: .9rem; }
+  .estado { color: var(--suave); font-size: .9rem; margin-top: 1.4rem; }
+</style>
+</head>
+<body>
+<main>
+  <a class="volver" href="../">Volver a la radio</a>
+  <h1>Oyentes conectados</h1>
+
+  <section class="tarjeta" aria-live="polite">
+    <div class="total" id="total">–</div>
+    <p class="que" id="que">Consultando…</p>
+    <div class="partes">
+      <div><b id="cloudflare">–</b><span>en la web y apps (Cloudflare)</span></div>
+      <div><b id="render">–</b><span id="render-texto">en TuneIn y directorios (Render)</span></div>
+    </div>
+  </section>
+
+  <h2>De dónde escuchan</h2>
+  <div id="lugares"><p class="nota">Consultando…</p></div>
+
+  <p class="estado" id="estado"></p>
+</main>
+
+<script>
+  const RADIO = "https://indiepop.agst5474.workers.dev";   // el Worker de la radio
+  const CADA = 20;                                           // segundos entre consultas
+  const $ = id => document.getElementById(id);
+  const escapar = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+  async function consultar() {
+    try {
+      const r = await fetch(RADIO + "/conectados?formato=json", { cache: "no-store" });
+      if (!r.ok) throw new Error();
+      const d = await r.json();
+      $("total").textContent = d.total;
+      $("que").textContent = d.total === 1 ? "persona escuchando ahora" : "personas escuchando ahora";
+      $("cloudflare").textContent = d.cloudflare;
+      $("render").textContent = d.render === null ? "–" : d.render;
+      $("render-texto").textContent = d.render === null
+        ? "Render no respondió (dormido o fuera del aire)" : "en TuneIn y directorios (Render)";
+      $("lugares").innerHTML = d.lugares.length
+        ? `<table><thead><tr><th>País</th><th>Ciudad</th><th>Oyentes</th></tr></thead><tbody>${
+            d.lugares.map(l => `<tr><td>${escapar(l.pais)}</td><td>${escapar(l.ciudad || "–")}</td><td>${l.oyentes}</td></tr>`).join("")
+          }</tbody></table><p class="nota">El lugar es aproximado y sale de la conexión. Render no informa de dónde son sus oyentes.</p>`
+        : `<p class="nota">Nadie escuchando por la web o las apps en este momento.</p>`;
+      $("estado").textContent = "Actualizado a las " + new Date().toLocaleTimeString("es-UY", { hour12: false }) + ". Se actualiza solo cada " + CADA + " segundos.";
+    } catch (e) {
+      $("estado").textContent = "No se pudo consultar la radio. Se vuelve a intentar en " + CADA + " segundos.";
+    }
+  }
+  consultar();
+  setInterval(() => { if (!document.hidden) consultar(); }, CADA * 1000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) consultar(); });
+</script>
+</body>
+</html>
