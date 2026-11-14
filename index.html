@@ -509,6 +509,8 @@
   let modo = "detenido";        // detenido · cargando · sonando
   let miId = "";                // número de esta conexión de audio
   const miOyente = Math.random().toString(36).slice(2, 10);   // el mismo en todas las conexiones de esta visita (para contar oyentes)
+  // En este navegador no se cuenta como oyente (se activa desde la página /conectados)
+  const NO_CONTAR = (() => { try { return localStorage.getItem("radio-no-contar") === "1"; } catch (e) { return false; } })() ? "&nc=1" : "";
   let miInicio = null;          // posición de la radio en la que empezó a llegar el audio
   let reintentos = 0, espera = null;
   let temaMostrado = null;      // clave del tema que está dibujado
@@ -753,7 +755,7 @@
     if (oido === null || radio.conexion_hasta - oido > 90) return;
     relevo = { id: miOyente + "." + Math.round(radio.conexion_hasta * 1000),
                inicio: radio.conexion_hasta };
-    otro.src = RADIO + "/stream?id=" + relevo.id;
+    otro.src = RADIO + "/stream?id=" + relevo.id + NO_CONTAR;
     otro.load();
   }
   function tomarPosta() {                          // terminó la conexión: suena la que estaba lista
@@ -780,7 +782,7 @@
     // termina en ".<hora de la radio en milisegundos>": el Worker empieza el audio justo en ese momento
     miId = miOyente + "." + Math.round(ahora());
     miInicio = null;
-    audio.src = RADIO + "/stream?id=" + miId;      // conexión nueva: siempre en vivo
+    audio.src = RADIO + "/stream?id=" + miId + NO_CONTAR;      // conexión nueva: siempre en vivo
     setTimeout(consultar, 1500);                   // averigua enseguida desde dónde está escuchando
     audio.play().catch(err => {
       if (err && err.name === "NotAllowedError") { // el navegador pide un toque del usuario
