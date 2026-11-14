@@ -16,11 +16,13 @@
   :root {
     --papel: #e6efec; --tarjeta: #f5faf8; --tinta: #13233a; --suave: #4c5d6b;
     --tinta-a: #00b37a; --tinta-b: #2f5bff; --linea: #13233a; --grano: .09;
+    --serie: #2f5bff;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --papel: #0f1a24; --tarjeta: #162532; --tinta: #e6f4ef; --suave: #9db3b0;
       --tinta-a: #2ee6a1; --tinta-b: #6d8dff; --linea: #e6f4ef; --grano: .06;
+      --serie: #5878ff;
     }
   }
   * { box-sizing: border-box; margin: 0; }
@@ -34,7 +36,8 @@
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
   }
   @media (prefers-color-scheme: dark) { body::before { filter: invert(1); } }
-  main { max-width: 30rem; margin: 0 auto; }
+  main { max-width: 44rem; margin: 0 auto; }
+  .vivo { max-width: 30rem; }
   .volver { color: var(--suave); font-weight: 600; text-decoration: none; }
   .volver:hover, .volver:focus-visible { color: var(--tinta); text-decoration: underline; }
   h1 {
@@ -58,6 +61,52 @@
   .partes b { display: block; font-size: 1.7rem; font-weight: 800; font-variant-numeric: tabular-nums; }
   .partes span { color: var(--suave); font-size: .92rem; line-height: 1.3; display: block; }
   .estado { color: var(--suave); font-size: .9rem; margin-top: 1.4rem; }
+
+  /* ====== Estadísticas ====== */
+  .estadisticas { margin-top: 3rem; }
+  h2 { font-size: 1.6rem; font-weight: 900; letter-spacing: -.03em; }
+  .filtros { display: flex; flex-wrap: wrap; gap: .6rem 1rem; margin: 1rem 0 1.4rem; }
+  .filtros label { display: flex; flex-direction: column; gap: .2rem; font-size: .82rem; font-weight: 600; color: var(--suave); }
+  .filtros select {
+    font: inherit; font-size: .95rem; font-weight: 600; color: var(--tinta);
+    background: var(--tarjeta); border: 2px solid var(--linea); border-radius: .6rem; padding: .4rem 2rem .4rem .65rem;
+    appearance: none; cursor: pointer;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' stroke='%234c5d6b' stroke-width='2' fill='none'/></svg>");
+    background-repeat: no-repeat; background-position: right .65rem center;
+  }
+  .filtros select:focus-visible, .grafico svg:focus-visible { outline: 3px solid var(--tinta-b); outline-offset: 2px; }
+  .resultados { transition: opacity .2s; }
+  .resultados.cargando { opacity: .5; }
+  .cifras { display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; }
+  @media (min-width: 40rem) { .cifras { grid-template-columns: repeat(3, 1fr); } }
+  .cifra { background: var(--tarjeta); border: 2px solid var(--linea); border-radius: .9rem; padding: .8rem .9rem; }
+  .cifra b { display: block; font-size: 1.6rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .cifra span { color: var(--suave); font-size: .85rem; line-height: 1.25; display: block; margin-top: .2rem; }
+  .bloque { background: var(--tarjeta); border: 2px solid var(--linea); border-radius: 1.1rem; padding: 1.1rem; margin-top: 1rem; }
+  .bloque h3 { font-size: 1rem; font-weight: 800; }
+  .bloque .sub { color: var(--suave); font-size: .85rem; }
+  .grafico { position: relative; margin-top: .8rem; }
+  .grafico svg { display: block; width: 100%; height: 220px; overflow: visible; }
+  .grafico .eje { fill: var(--suave); font-size: 11px; font-family: inherit; }
+  .grafico .reja { stroke: color-mix(in srgb, var(--tinta) 12%, transparent); stroke-width: 1; }
+  .grafico .base { stroke: color-mix(in srgb, var(--tinta) 35%, transparent); stroke-width: 1; }
+  .grafico .linea { fill: none; stroke: var(--serie); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .grafico .relleno { fill: color-mix(in srgb, var(--serie) 12%, transparent); }
+  .grafico .cruz { stroke: var(--suave); stroke-width: 1; }
+  .grafico .punto { fill: var(--serie); stroke: var(--tarjeta); stroke-width: 2; }
+  .aviso-tip {
+    position: absolute; pointer-events: none; background: var(--tinta); color: var(--papel);
+    border-radius: .5rem; padding: .4rem .6rem; font-size: .82rem; line-height: 1.3; white-space: nowrap;
+    transform: translate(-50%, -100%); margin-top: -10px;
+  }
+  .aviso-tip b { font-size: 1rem; }
+  .vacio { color: var(--suave); padding: 2.5rem 0; text-align: center; }
+  table { width: 100%; border-collapse: collapse; margin-top: .6rem; }
+  th { text-align: left; font-size: .82rem; color: var(--suave); font-weight: 600; padding: 0 .25rem .4rem; }
+  td { padding: .5rem .25rem; border-top: 1.5px solid color-mix(in srgb, var(--tinta) 15%, transparent); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.num { font-weight: 700; }
+  .nota { color: var(--suave); font-size: .85rem; margin-top: .8rem; }
 </style>
 </head>
 <body>
@@ -65,7 +114,7 @@
   <a class="volver" href="../">Volver a la radio</a>
   <h1>Oyentes conectados</h1>
 
-  <section class="tarjeta" aria-live="polite">
+  <section class="tarjeta vivo" aria-live="polite">
     <div class="total" id="total">–</div>
     <p class="que" id="que">Consultando…</p>
     <div class="partes">
@@ -75,6 +124,60 @@
   </section>
 
   <p class="estado" id="estado"></p>
+
+  <section class="estadisticas" aria-labelledby="titulo-est">
+    <h2 id="titulo-est">Estadísticas</h2>
+    <form class="filtros" id="filtros">
+      <label>Período
+        <select name="periodo">
+          <option value="hoy">Hoy</option>
+          <option value="7d">Últimos 7 días</option>
+          <option value="30d">Últimos 30 días</option>
+          <option value="90d">Últimos 90 días</option>
+        </select>
+      </label>
+      <label>Stream
+        <select name="origen">
+          <option value="todos">Todos</option>
+          <option value="cloudflare">Web y apps (Cloudflare)</option>
+          <option value="render">TuneIn y directorios (Render)</option>
+        </select>
+      </label>
+      <label>Cliente
+        <select name="cliente">
+          <option value="">Todos (sin verificadores)</option>
+          <option value="web-celular">Web en celular</option>
+          <option value="web-pc">Web en computadora</option>
+          <option value="vlc">VLC</option>
+          <option value="apps">Otras apps</option>
+          <option value="verificador">Verificadores (directorios y bots)</option>
+        </select>
+      </label>
+    </form>
+
+    <div class="resultados" id="resultados">
+      <div class="cifras">
+        <div class="cifra"><b id="e-pico">–</b><span>pico de oyentes a la vez</span></div>
+        <div class="cifra"><b id="e-promedio">–</b><span>promedio de oyentes a la vez</span></div>
+        <div class="cifra"><b id="e-sesiones">–</b><span>escuchas</span></div>
+        <div class="cifra"><b id="e-unicos">–</b><span>oyentes distintos</span></div>
+        <div class="cifra"><b id="e-horas">–</b><span>horas escuchadas</span></div>
+        <div class="cifra"><b id="e-duracion">–</b><span>duración media de una escucha</span></div>
+      </div>
+
+      <div class="bloque">
+        <h3>Oyentes a la vez</h3>
+        <p class="sub" id="e-sub">Promedio de cada tramo</p>
+        <div class="grafico" id="grafico"></div>
+      </div>
+
+      <div class="bloque">
+        <h3>Por tipo de cliente</h3>
+        <div id="e-clientes"></div>
+      </div>
+      <p class="nota" id="e-nota"></p>
+    </div>
+  </section>
 </main>
 
 <script>
@@ -100,7 +203,184 @@
   }
   consultar();
   setInterval(() => { if (!document.hidden) consultar(); }, CADA * 1000);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) consultar(); });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { consultar(); cargarEstadisticas(); } });
+
+  // ====== ESTADÍSTICAS ======
+  // El Worker guarda una muestra cada 5 minutos y cada escucha de la web y las apps.
+  // Render solo informa cuántos escuchan (no quién ni con qué), así que entra en el gráfico y el pico.
+  const ZONA = "America/Montevideo";
+  const fmtHora = new Intl.DateTimeFormat("es-UY", { timeZone: ZONA, hour: "2-digit", minute: "2-digit", hour12: false });
+  const fmtDia = new Intl.DateTimeFormat("es-UY", { timeZone: ZONA, weekday: "short", day: "numeric" });
+  const fmtFecha = new Intl.DateTimeFormat("es-UY", { timeZone: ZONA, day: "numeric", month: "short" });
+  const fmtCompleto = new Intl.DateTimeFormat("es-UY", { timeZone: ZONA, weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+  const numero = (n, dec = 0) => Number(n).toLocaleString("es-UY", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  const form = $("filtros");
+  let ultimas = null;
+
+  try {                                          // recuerda los filtros elegidos en este navegador
+    const g = JSON.parse(localStorage.getItem("filtros-estadisticas") || "{}");
+    for (const [k, v] of Object.entries(g)) if (form.elements[k]) form.elements[k].value = v;
+  } catch (e) {}
+
+  async function cargarEstadisticas() {
+    const filtros = Object.fromEntries(new FormData(form));
+    try { localStorage.setItem("filtros-estadisticas", JSON.stringify(filtros)); } catch (e) {}
+    $("resultados").classList.add("cargando");
+    try {
+      const r = await fetch(RADIO + "/estadisticas?" + new URLSearchParams(filtros), { cache: "no-store" });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "");
+      ultimas = d;
+      mostrar(d);
+    } catch (e) {
+      $("e-nota").textContent = "No se pudieron cargar las estadísticas." + (e.message ? " " + e.message : "");
+    } finally {
+      $("resultados").classList.remove("cargando");
+    }
+  }
+  form.addEventListener("change", cargarEstadisticas);
+  setInterval(() => { if (!document.hidden) cargarEstadisticas(); }, 60000);
+
+  function mostrar(d) {
+    $("e-pico").textContent = numero(d.pico);
+    $("e-promedio").textContent = numero(d.promedio, 1);
+    const s = d.sesiones;
+    $("e-sesiones").textContent = s ? numero(s.total) : "–";
+    $("e-unicos").textContent = s ? numero(s.oyentes_unicos) : "–";
+    $("e-horas").textContent = s ? numero(s.horas, 1) : "–";
+    $("e-duracion").textContent = s ? (s.duracion_media_min >= 60
+      ? numero(s.duracion_media_min / 60, 1) + " h" : numero(s.duracion_media_min) + " min") : "–";
+    const minutos = Math.round(d.cada_punto / 60);
+    $("e-sub").textContent = minutos <= 5 ? "Cada 5 minutos"
+      : "Promedio de cada tramo de " + (minutos >= 60 ? numero(minutos / 60, minutos % 60 ? 1 : 0) + " h" : minutos + " min");
+    dibujarGrafico(d);
+    // tabla por tipo de cliente
+    const caja = $("e-clientes");
+    caja.textContent = "";
+    if (!d.por_cliente.length) {
+      const p = document.createElement("p"); p.className = "sub";
+      p.textContent = d.origen === "render" ? "Render no informa con qué escuchan sus oyentes." : "Sin escuchas en este período.";
+      caja.append(p);
+    } else {
+      const t = document.createElement("table");
+      t.innerHTML = '<thead><tr><th>Cliente</th><th class="num">Escuchas</th><th class="num">Horas</th></tr></thead><tbody></tbody>';
+      for (const c of d.por_cliente) {
+        const fila = t.tBodies[0].insertRow();
+        fila.insertCell().textContent = c.nombre;
+        const a = fila.insertCell(); a.className = "num"; a.textContent = numero(c.sesiones);
+        const b = fila.insertCell(); b.className = "num"; b.textContent = numero(c.horas, 1);
+      }
+      caja.append(t);
+    }
+    const notas = [];
+    if (d.origen !== "cloudflare") notas.push("Escuchas, oyentes distintos, horas y clientes son solo de la web y las apps: Render informa únicamente cuántos escuchan.");
+    if (d.primera_muestra) notas.push("Datos desde el " + fmtCompleto.format(d.primera_muestra * 1000) + ".");
+    $("e-nota").textContent = notas.join(" ");
+  }
+
+  // ---- gráfico de línea con cruz y globo al pasar el puntero ----
+  function dibujarGrafico(d) {
+    const caja = $("grafico");
+    caja.textContent = "";
+    const serie = d.serie;
+    if (serie.length < 2) {
+      const p = document.createElement("p"); p.className = "vacio";
+      p.textContent = "Todavía no hay datos suficientes para este período. Se toma una muestra cada 5 minutos.";
+      caja.append(p);
+      return;
+    }
+    const ancho = Math.max(280, caja.clientWidth), alto = 220;
+    const m = { izq: 30, der: 8, arr: 10, aba: 24 };
+    const x0 = d.desde, x1 = d.hasta;
+    const maxY = Math.max(1, ...serie.map(p => p.promedio));
+    const paso = maxY <= 5 ? 1 : maxY <= 10 ? 2 : maxY <= 25 ? 5 : maxY <= 50 ? 10 : Math.ceil(maxY / 50) * 10;
+    const tope = Math.ceil(maxY / paso) * paso;
+    const X = t => m.izq + (t - x0) / (x1 - x0) * (ancho - m.izq - m.der);
+    const Y = v => m.arr + (1 - v / tope) * (alto - m.arr - m.aba);
+    const ns = "http://www.w3.org/2000/svg";
+    const el = (tag, attrs, padre) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); padre.append(e); return e; };
+    const svg = el("svg", { viewBox: `0 0 ${ancho} ${alto}`, tabindex: "0", role: "img",
+      "aria-label": `Oyentes a la vez: pico ${d.pico}, promedio ${numero(d.promedio, 1)}. Usá las flechas para recorrer los valores.` }, caja);
+    // reja y eje vertical
+    for (let v = 0; v <= tope; v += paso) {
+      el("line", { x1: m.izq, x2: ancho - m.der, y1: Y(v), y2: Y(v), class: v === 0 ? "base" : "reja" }, svg);
+      el("text", { x: m.izq - 6, y: Y(v) + 4, "text-anchor": "end", class: "eje" }, svg).textContent = v;
+    }
+    // eje horizontal: horas (hoy), días (7 días) o fechas
+    const dias = (x1 - x0) / 86400;
+    const marcas = [];
+    if (dias <= 1.01) {
+      const h = 3600 * (ancho < 420 ? 6 : 3);
+      for (let t = Math.ceil((x0 - 3 * 3600) / h) * h + 3 * 3600; t <= x1; t += h) marcas.push([t, fmtHora.format(t * 1000)]);
+    } else {
+      const cada = dias <= 7 ? 1 : dias <= 30 ? (ancho < 420 ? 7 : 5) : (ancho < 420 ? 30 : 15);
+      for (let t = Math.ceil((x0 + 3 * 3600) / 86400) * 86400 + 3 * 3600; t <= x1; t += 86400 * cada)
+        marcas.push([t, (dias <= 7 ? fmtDia : fmtFecha).format(t * 1000)]);
+    }
+    for (const [t, texto] of marcas) {
+      if (X(t) < m.izq + 10 || X(t) > ancho - m.der - 10) continue;
+      el("text", { x: X(t), y: alto - 6, "text-anchor": "middle", class: "eje" }, svg).textContent = texto;
+    }
+    // línea (se corta donde faltan muestras)
+    let camino = "", area = "", tramo = [];
+    const cerrar = () => {
+      if (tramo.length > 1) area += `M${X(tramo[0].t)},${Y(0)}` + tramo.map(p => `L${X(p.t)},${Y(p.promedio)}`).join("") + `L${X(tramo[tramo.length - 1].t)},${Y(0)}Z`;
+      tramo = [];
+    };
+    serie.forEach((p, i) => {
+      const salto = i > 0 && p.t - serie[i - 1].t > d.cada_punto * 2.5;
+      if (salto) cerrar();
+      camino += (i === 0 || salto ? "M" : "L") + X(p.t) + "," + Y(p.promedio);
+      tramo.push(p);
+    });
+    cerrar();
+    el("path", { d: area, class: "relleno" }, svg);
+    el("path", { d: camino, class: "linea" }, svg);
+    // cruz, punto y globo
+    const cruz = el("line", { y1: m.arr, y2: alto - m.aba, class: "cruz", visibility: "hidden" }, svg);
+    const punto = el("circle", { r: 4.5, class: "punto", visibility: "hidden" }, svg);
+    const globo = document.createElement("div");
+    globo.className = "aviso-tip"; globo.hidden = true; caja.append(globo);
+    let actual = -1;
+    const marcar = i => {
+      actual = Math.max(0, Math.min(serie.length - 1, i));
+      const p = serie[actual], cx = X(p.t), cy = Y(p.promedio);
+      for (const [k, v] of [["x1", cx], ["x2", cx]]) cruz.setAttribute(k, v);
+      punto.setAttribute("cx", cx); punto.setAttribute("cy", cy);
+      cruz.setAttribute("visibility", "visible"); punto.setAttribute("visibility", "visible");
+      const escala = caja.clientWidth / ancho;
+      globo.hidden = false;
+      globo.style.left = Math.min(Math.max(cx * escala, 70), caja.clientWidth - 70) + "px";
+      globo.style.top = cy * escala + "px";
+      globo.textContent = "";
+      const valor = document.createElement("b");
+      valor.textContent = d.cada_punto <= 300 ? numero(p.promedio) : numero(p.promedio, 1);
+      globo.append(valor, document.createTextNode(d.cada_punto <= 300 ? " oyentes" : " en promedio · máx. " + p.max),
+                   document.createElement("br"), document.createTextNode(fmtCompleto.format(p.t * 1000)));
+    };
+    const ocultar = () => { globo.hidden = true; cruz.setAttribute("visibility", "hidden"); punto.setAttribute("visibility", "hidden"); };
+    svg.addEventListener("pointermove", e => {
+      const r = svg.getBoundingClientRect();
+      const t = x0 + ((e.clientX - r.left) / r.width * ancho - m.izq) / (ancho - m.izq - m.der) * (x1 - x0);
+      let mejor = 0;
+      serie.forEach((p, i) => { if (Math.abs(p.t - t) < Math.abs(serie[mejor].t - t)) mejor = i; });
+      marcar(mejor);
+    });
+    svg.addEventListener("pointerleave", ocultar);
+    svg.addEventListener("blur", ocultar);
+    svg.addEventListener("keydown", e => {
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        e.preventDefault();
+        marcar(actual < 0 ? serie.length - 1 : actual + (e.key === "ArrowRight" ? 1 : -1));
+      }
+    });
+  }
+  let esperaRedibujo = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(esperaRedibujo);
+    esperaRedibujo = setTimeout(() => { if (ultimas) dibujarGrafico(ultimas); }, 150);
+  });
+  cargarEstadisticas();
 </script>
 </body>
 </html>
