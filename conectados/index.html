@@ -107,6 +107,9 @@
   td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   td.num { font-weight: 700; }
   .nota { color: var(--suave); font-size: .85rem; margin-top: .8rem; }
+  .no-contar { display: flex; gap: .55rem; align-items: flex-start; margin-top: 2.5rem; padding-top: 1.2rem;
+               border-top: 2px solid var(--linea); font-weight: 600; cursor: pointer; }
+  .no-contar input { width: 1.15rem; height: 1.15rem; margin-top: .15rem; accent-color: var(--tinta-b); flex: none; }
 </style>
 </head>
 <body>
@@ -178,6 +181,11 @@
       <p class="nota" id="e-nota"></p>
     </div>
   </section>
+
+  <label class="no-contar">
+    <input type="checkbox" id="no-contar">
+    No contarme cuando escucho la radio desde este navegador
+  </label>
 </main>
 
 <script>
@@ -381,6 +389,17 @@
     esperaRedibujo = setTimeout(() => { if (ultimas) dibujarGrafico(ultimas); }, 150);
   });
   cargarEstadisticas();
+
+  // ====== NO CONTARME ======
+  // Se guarda en este navegador; la página de la radio lo lee y avisa al Worker que no cuente esta escucha.
+  const casilla = $("no-contar");
+  try { casilla.checked = localStorage.getItem("radio-no-contar") === "1"; } catch (e) { casilla.disabled = true; }
+  casilla.addEventListener("change", () => {
+    try {
+      if (casilla.checked) localStorage.setItem("radio-no-contar", "1");
+      else localStorage.removeItem("radio-no-contar");
+    } catch (e) {}
+  });
 </script>
 </body>
 </html>
