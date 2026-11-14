@@ -369,9 +369,6 @@
 <main class="reproductor" id="reproductor">
   <div class="cabecera">
     <div class="estado"><span class="punto" aria-hidden="true"></span><span id="estado">Consultando la radio…</span></div>
-    <div class="etiquetas">
-      <span class="calidad" id="oyentes" title="Personas escuchando ahora" hidden></span>
-    </div>
   </div>
 
   <div class="tema">
@@ -510,6 +507,7 @@
   let quiereEscuchar = false;   // el oyente tocó play (si se corta, se reintenta solo)
   let modo = "detenido";        // detenido · cargando · sonando
   let miId = "";                // número de esta conexión de audio
+  const miOyente = Math.random().toString(36).slice(2, 10);   // el mismo en todas las conexiones de esta visita (para contar oyentes)
   let miInicio = null;          // posición de la radio en la que empezó a llegar el audio
   let reintentos = 0, espera = null;
   let temaMostrado = null;      // clave del tema que está dibujado
@@ -623,8 +621,6 @@
     caja.classList.toggle("apagada", !enAire);
     play.disabled = false;
     $("estado").textContent = modo === "sonando" ? "Escuchando" : modo === "cargando" ? "Conectando…" : !datosVigentes ? "Estado sin confirmar" : !enAire ? "Fuera del aire" : "En vivo";
-    $("oyentes").hidden = !datosVigentes || !(radio.oyentes > 0);
-    $("oyentes").textContent = radio.oyentes + (radio.oyentes === 1 ? " oyente" : " oyentes");
 
     const clave = s ? s.tema.pos + "|" + s.tema.title : enAire ? "esperando" : "apagada";
     if (clave !== temaMostrado) {
@@ -754,7 +750,7 @@
     if (miInicio === null || radio.conexion_hasta <= miInicio + 1) return;   // dato viejo de la conexión anterior
     const oido = escuchado();
     if (oido === null || radio.conexion_hasta - oido > 90) return;
-    relevo = { id: Math.random().toString(36).slice(2, 10) + "." + Math.round(radio.conexion_hasta * 1000),
+    relevo = { id: miOyente + "." + Math.round(radio.conexion_hasta * 1000),
                inicio: radio.conexion_hasta };
     otro.src = RADIO + "/stream?id=" + relevo.id;
     otro.load();
@@ -781,7 +777,7 @@
     if (relevo) { relevo = null; limpiar(otro); }
     ponerModo("cargando");
     // termina en ".<hora de la radio en milisegundos>": el Worker empieza el audio justo en ese momento
-    miId = Math.random().toString(36).slice(2, 10) + "." + Math.round(ahora());
+    miId = miOyente + "." + Math.round(ahora());
     miInicio = null;
     audio.src = RADIO + "/stream?id=" + miId;      // conexión nueva: siempre en vivo
     setTimeout(consultar, 1500);                   // averigua enseguida desde dónde está escuchando
