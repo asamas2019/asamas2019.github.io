@@ -326,11 +326,6 @@
   footer a { color: var(--tinta); }
   footer p + p { margin-top: .6rem; }
 
-  /* "Escuchar en tu app": baja una lista .m3u con la dirección del audio */
-  .en-app { margin-top: .9rem; font-size: .85rem; color: var(--suave); }
-  .en-app a { color: var(--tinta); font-weight: 600; text-underline-offset: .15em; }
-  .en-app a:focus-visible { outline: 2px solid var(--tinta-a); outline-offset: 2px; }
-
   /* Mejoras de uso: controles, lectura y estados de conexión. */
   .solo-lector { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .controles { flex-wrap: wrap; margin: 0 0 1.3rem; }
@@ -428,10 +423,6 @@
 
 
   <p class="aviso" id="aviso" role="status"></p>
-  <p class="en-app">
-    <a href="#" id="en-app" download="indie-pop-en-espanol.m3u">Escuchar en tu app</a>
-    <span>(VLC, Winamp, el auto o la app de radio del celular)</span>
-  </p>
   <div class="conexion" role="status"><span id="conexion">Consultando la radio…</span>
     <button type="button" id="reconsultar" hidden>Reintentar</button>
   </div>
@@ -897,7 +888,6 @@
 
   // ====== ARRANQUE ======
   $("calidad").textContent = CALIDAD;
-  $("en-app").href = RADIO + "/radio.m3u";      // lista para abrir la radio en otras apps
   audio.volume = 1;
   consultar();
   // Con la pestaña escondida no consulta ni dibuja (ahorra servidor y batería)
