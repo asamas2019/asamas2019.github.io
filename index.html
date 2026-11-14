@@ -371,7 +371,7 @@
     <div class="estado"><span class="punto" aria-hidden="true"></span><span id="estado">Consultando la radio…</span></div>
     <div class="etiquetas">
       <span class="calidad" id="oyentes" title="Personas escuchando ahora" hidden></span>
-      <span class="calidad" id="calidad" title="Calidad de audio de la transmisión">AAC+</span>
+      <span class="calidad" id="calidad" title="Calidad de audio de la transmisión">MP3</span>
     </div>
   </div>
 
@@ -485,15 +485,21 @@
 
 <script>
   // ====== DATOS DE TU RADIO ======
-  const RADIO = "https://radio-render-ey3i.onrender.com";   // tu radio en Render
+  const RADIO = "https://indiepop.agst5474.workers.dev";   // tu radio en Cloudflare (antes: https://radio-render-ey3i.onrender.com)
   const NOMBRE = "Indie Pop en Español";                    // se ve en la pestaña y en el celular bloqueado
-  const CALIDAD = "AAC+";   // se usa hasta que la radio informa su calidad (después se actualiza sola)
+  const CALIDAD = "MP3";    // se usa hasta que la radio informa su calidad (después se actualiza sola)
   const CLAVE_FORMULARIO = "c95b3452-d4e7-4f9d-bb91-0bf53b30503e";   // Web3Forms: adónde llegan los mensajes
   const CADA_CUANTO = 20;   // segundos entre consultas a la radio (al terminar un tema consulta enseguida)
   const RETRASO = 2;        // segundos que tarda el audio en llegar, cuando no se puede medir exacto
 
   const $ = id => document.getElementById(id);
-  const audio = $("audio"), caja = $("reproductor"), play = $("play");
+  let audio = $("audio");                                  // el reproductor que suena ahora
+  const caja = $("reproductor"), play = $("play");
+  // Segundo reproductor: se prepara antes de que termine la conexión con la radio y toma la posta
+  // justo en el cambio de tema, así no hay corte (el Worker renueva la conexión cada ~20 temas).
+  let otro = document.createElement("audio");
+  otro.preload = "auto";
+  let relevo = null;            // { id, inicio }: la conexión que ya se está cargando en "otro"
   const ICONOS = {
     play: '<path d="M8 5v14l11-7z"/>',
     pausa: '<path d="M6 6h12v12H6z"/>',
@@ -739,10 +745,46 @@
     dibujar();
   }
 
+  // ====== CAMBIO DE CONEXIÓN SIN CORTE ======
+  const SILENCIO = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
+  function desbloquear(el) {                       // en iPhone, cada reproductor necesita un toque del usuario
+    if (el.getAttribute("src")) return;
+    el.src = SILENCIO;
+    el.play().then(() => el.pause()).catch(() => {});
+  }
+  function prepararRelevo() {
+    if (relevo || !quiereEscuchar || modo !== "sonando" || !radio || typeof radio.conexion_hasta !== "number") return;
+    if (miInicio === null || radio.conexion_hasta <= miInicio + 1) return;   // dato viejo de la conexión anterior
+    const oido = escuchado();
+    if (oido === null || radio.conexion_hasta - oido > 90) return;
+    relevo = { id: Math.random().toString(36).slice(2, 10) + "." + Math.round(radio.conexion_hasta * 1000),
+               inicio: radio.conexion_hasta };
+    otro.src = RADIO + "/stream?id=" + relevo.id;
+    otro.load();
+  }
+  function tomarPosta() {                          // terminó la conexión: suena la que estaba lista
+    const listo = relevo;
+    relevo = null;
+    if (!listo || otro.readyState < 2) { limpiar(otro); return false; }
+    const viejo = audio;
+    audio = otro; otro = viejo;
+    audio.volume = viejo.volume; audio.muted = viejo.muted;
+    miId = listo.id; miInicio = listo.inicio;
+    limpiar(otro);
+    audio.play().then(() => consultar()).catch(() => reintentar());
+    return true;
+  }
+  function limpiar(el) {
+    el.removeAttribute("src");
+    el.load();
+  }
+
   function conectar() {
     clearTimeout(espera); espera = null;
+    if (relevo) { relevo = null; limpiar(otro); }
     ponerModo("cargando");
-    miId = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    // termina en ".<hora de la radio en milisegundos>": el Worker empieza el audio justo en ese momento
+    miId = Math.random().toString(36).slice(2, 10) + "." + Math.round(ahora());
     miInicio = null;
     audio.src = RADIO + "/stream?id=" + miId;      // conexión nueva: siempre en vivo
     setTimeout(consultar, 1500);                   // averigua enseguida desde dónde está escuchando
@@ -757,6 +799,7 @@
     quiereEscuchar = false;
     miId = ""; miInicio = null;
     clearTimeout(espera); espera = null;
+    if (relevo) { relevo = null; limpiar(otro); }
     audio.pause();
     audio.removeAttribute("src");
     audio.load();
@@ -777,18 +820,23 @@
 
   function tocarPlay() {
     if (quiereEscuchar) detener();
-    else { quiereEscuchar = true; reintentos = 0; decir("Conectando…"); conectar(); }
+    else { quiereEscuchar = true; reintentos = 0; decir("Conectando…"); desbloquear(otro); conectar(); }
   }
   play.addEventListener("click", tocarPlay);
-  audio.addEventListener("playing", () => { reintentos = 0; decir(""); ponerModo("sonando"); });
-  audio.addEventListener("waiting", () => { if (quiereEscuchar) ponerModo("cargando"); });
-  audio.addEventListener("error", () => { if (quiereEscuchar && audio.getAttribute("src")) reintentar(); });
-  audio.addEventListener("ended", () => { if (quiereEscuchar) reintentar(); });
-  audio.addEventListener("stalled", () => {
+  // Los avisos de los dos reproductores se atienden solo si vienen del que está sonando.
+  function alSonar(tipo, accion) {
+    for (const el of [audio, otro]) el.addEventListener(tipo, e => { if (e.target === audio) accion(e); });
+  }
+  alSonar("playing", () => { reintentos = 0; decir(""); ponerModo("sonando"); });
+  alSonar("waiting", () => { if (quiereEscuchar) ponerModo("cargando"); });
+  alSonar("error", () => { if (quiereEscuchar && audio.getAttribute("src")) reintentar(); });
+  alSonar("ended", () => { if (quiereEscuchar && !tomarPosta()) reintentar(); });
+  alSonar("stalled", () => {
     if (!quiereEscuchar) return;
     clearTimeout(espera);
     espera = setTimeout(() => { if (audio.paused || audio.readyState < 3) reintentar(); }, 8000);
   });
+  setInterval(prepararRelevo, 5000);
 
   // Vigilante: si el audio se queda trabado sin avisar, se reconecta solo.
   let ultimoTiempo = -1, quieto = 0, cargandoDesde = 0;
