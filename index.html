@@ -341,11 +341,8 @@
   .conexion { font-size: .88rem; color: var(--suave); }
   .conexion:has(#conexion:empty):has(#reconsultar[hidden]) { display: none; }
   #reconsultar { margin-top: .5rem; min-height: 2.75rem; padding: .4rem .9rem; background: var(--tarjeta); color: var(--tinta); border: 2px solid var(--linea); border-radius: 2rem; font: inherit; cursor: pointer; }
-  #reconsultar:focus-visible, .detalle-tema summary:focus-visible, .detalle-tema a:focus-visible { outline: 3px solid var(--tinta-b); outline-offset: 3px; }
+  #reconsultar:focus-visible { outline: 3px solid var(--tinta-b); outline-offset: 3px; }
   #reconsultar[hidden] { display: none; }
-  .detalle-tema { margin-top: 1rem; font-size: .88rem; overflow-wrap: anywhere; }
-  .detalle-tema summary { cursor: pointer; min-height: 2.75rem; padding: .5rem 0; }
-  .detalle-tema a { display: inline-block; padding: .5rem 0; color: var(--tinta); }
   #enlace-compartir { width: 100%; padding: .7rem; font: inherit; background: var(--tarjeta); color: var(--tinta); border: 2px solid var(--linea); border-radius: .4rem; }
   @media (max-width: 26rem) {
     body { padding-top: 1.25rem; }
@@ -430,11 +427,6 @@
     <button type="button" id="reconsultar" hidden>Reintentar</button>
   </div>
   <p class="solo-lector" id="anuncio-tema" role="status" aria-live="polite" aria-atomic="true"></p>
-  <details class="detalle-tema" id="detalle-tema" hidden>
-    <summary>Ver canción y artista</summary>
-    <p id="tema-completo"></p>
-    <a id="enlace-artista" target="_blank" rel="noopener" hidden>Conocer al artista ↗</a>
-  </details>
 </main>
 </div>
 
@@ -652,12 +644,6 @@
     $("artista").textContent = artista;
     ponerTapa($("tapa"), tema && tema.image);
     dibujarCredito(tema);
-    $("detalle-tema").hidden = !tema;
-    $("tema-completo").textContent = tema ? titulo + (tema.artist ? " — " + tema.artist : "") : "";
-    const enlace = enlaceSeguro(tema && tema.link);
-    $("enlace-artista").hidden = !enlace;
-    if (enlace) $("enlace-artista").href = enlace;
-    else $("enlace-artista").removeAttribute("href");
     const anuncio = tema ? "Ahora: " + titulo + (tema.artist ? ", de " + tema.artist : "") : "";
     if ($("anuncio-tema").textContent !== anuncio) $("anuncio-tema").textContent = anuncio;
     dibujarSiguiente(s && s.siguiente);
