@@ -369,9 +369,6 @@
 <main class="reproductor" id="reproductor">
   <div class="cabecera">
     <div class="estado"><span class="punto" aria-hidden="true"></span><span id="estado">Consultando la radio…</span></div>
-    <div class="etiquetas">
-      <span class="calidad" id="oyentes" title="Personas escuchando ahora" hidden></span>
-    </div>
   </div>
 
   <div class="tema">
@@ -480,7 +477,7 @@
 </div>
 
 
-<audio id="audio" preload="none"></audio>
+<audio id="audio" preload="none" crossorigin="anonymous"></audio>
 
 <script>
   // ====== DATOS DE TU RADIO ======
@@ -497,6 +494,7 @@
   // justo en el cambio de tema, así no hay corte (el Worker renueva la conexión cada ~20 temas).
   let otro = document.createElement("audio");
   otro.preload = "auto";
+  otro.crossOrigin = "anonymous";             // para poder ajustar el volumen de cada tema (ver VOLUMEN PAREJO)
   let relevo = null;            // { id, inicio }: la conexión que ya se está cargando en "otro"
   const ICONOS = {
     play: '<path d="M8 5v14l11-7z"/>',
@@ -510,6 +508,7 @@
   let quiereEscuchar = false;   // el oyente tocó play (si se corta, se reintenta solo)
   let modo = "detenido";        // detenido · cargando · sonando
   let miId = "";                // número de esta conexión de audio
+  const miOyente = Math.random().toString(36).slice(2, 10);   // el mismo en todas las conexiones de esta visita (para contar oyentes)
   let miInicio = null;          // posición de la radio en la que empezó a llegar el audio
   let reintentos = 0, espera = null;
   let temaMostrado = null;      // clave del tema que está dibujado
@@ -623,8 +622,6 @@
     caja.classList.toggle("apagada", !enAire);
     play.disabled = false;
     $("estado").textContent = modo === "sonando" ? "Escuchando" : modo === "cargando" ? "Conectando…" : !datosVigentes ? "Estado sin confirmar" : !enAire ? "Fuera del aire" : "En vivo";
-    $("oyentes").hidden = !datosVigentes || !(radio.oyentes > 0);
-    $("oyentes").textContent = radio.oyentes + (radio.oyentes === 1 ? " oyente" : " oyentes");
 
     const clave = s ? s.tema.pos + "|" + s.tema.title : enAire ? "esperando" : "apagada";
     if (clave !== temaMostrado) {
@@ -754,7 +751,7 @@
     if (miInicio === null || radio.conexion_hasta <= miInicio + 1) return;   // dato viejo de la conexión anterior
     const oido = escuchado();
     if (oido === null || radio.conexion_hasta - oido > 90) return;
-    relevo = { id: Math.random().toString(36).slice(2, 10) + "." + Math.round(radio.conexion_hasta * 1000),
+    relevo = { id: miOyente + "." + Math.round(radio.conexion_hasta * 1000),
                inicio: radio.conexion_hasta };
     otro.src = RADIO + "/stream?id=" + relevo.id;
     otro.load();
@@ -765,7 +762,7 @@
     if (!listo || otro.readyState < 2) { limpiar(otro); return false; }
     const viejo = audio;
     audio = otro; otro = viejo;
-    audio.volume = viejo.volume; audio.muted = viejo.muted;
+    aplicarVolumen();
     miId = listo.id; miInicio = listo.inicio;
     limpiar(otro);
     audio.play().then(() => consultar()).catch(() => reintentar());
@@ -781,7 +778,7 @@
     if (relevo) { relevo = null; limpiar(otro); }
     ponerModo("cargando");
     // termina en ".<hora de la radio en milisegundos>": el Worker empieza el audio justo en ese momento
-    miId = Math.random().toString(36).slice(2, 10) + "." + Math.round(ahora());
+    miId = miOyente + "." + Math.round(ahora());
     miInicio = null;
     audio.src = RADIO + "/stream?id=" + miId;      // conexión nueva: siempre en vivo
     setTimeout(consultar, 1500);                   // averigua enseguida desde dónde está escuchando
@@ -817,8 +814,55 @@
 
   function tocarPlay() {
     if (quiereEscuchar) detener();
-    else { quiereEscuchar = true; reintentos = 0; decir("Conectando…"); desbloquear(otro); conectar(); }
+    else {
+      quiereEscuchar = true; reintentos = 0; decir("Conectando…");
+      armarGrafo(); desbloquear(otro); conectar();
+    }
   }
+
+  // ====== VOLUMEN PAREJO ======
+  // Cada tema trae "g": cuántos dB subirlo o bajarlo para que todos suenen al mismo nivel
+  // (lo mide GitHub Actions cada día). La página lo aplica con Web Audio, justo en el cambio de tema,
+  // y un limitador evita que los temas que se suben saturen.
+  // En iPhone no se usa: Web Audio corta el sonido con la pantalla bloqueada.
+  let grafo = null;
+  const lineal = db => Math.pow(10, db / 20);
+  function armarGrafo() {
+    if (grafo || document.body.classList.contains("es-ios") || !window.AudioContext) {
+      if (grafo) grafo.ctx.resume();
+      return;
+    }
+    try {
+      const ctx = new AudioContext();
+      const nivel = ctx.createGain(), vol = ctx.createGain();
+      const limitador = ctx.createDynamicsCompressor();
+      limitador.threshold.value = -1.5; limitador.knee.value = 0; limitador.ratio.value = 20;
+      limitador.attack.value = 0.002; limitador.release.value = 0.15;
+      for (const el of [audio, otro]) ctx.createMediaElementSource(el).connect(nivel);
+      nivel.connect(limitador).connect(vol).connect(ctx.destination);
+      grafo = { ctx, nivel, vol, actual: null, programado: null };
+      aplicarVolumen();
+      ctx.resume();
+    } catch (e) { grafo = null; }
+  }
+  function seguirVolumen() {
+    if (!grafo || !quiereEscuchar) return;
+    const s = situacion();
+    if (!s || !s.exacto) return;
+    const ahoraCtx = grafo.ctx.currentTime;
+    const clave = s.tema.pos;
+    if (grafo.actual !== clave && grafo.programado !== clave) {   // por si se perdió el cambio programado
+      grafo.nivel.gain.setTargetAtTime(lineal(s.tema.g || 0), ahoraCtx, 0.05);
+    }
+    grafo.actual = clave;
+    // el cambio al tema siguiente se programa con anticipación, al instante exacto
+    const falta = s.tema.duration - s.pasado;
+    if (s.siguiente && falta < 70 && grafo.programado !== s.siguiente.pos) {
+      grafo.programado = s.siguiente.pos;
+      grafo.nivel.gain.setTargetAtTime(lineal(s.siguiente.g || 0), ahoraCtx + Math.max(0, falta), 0.01);
+    }
+  }
+  setInterval(seguirVolumen, 500);
   play.addEventListener("click", tocarPlay);
   // Los avisos de los dos reproductores se atienden solo si vienen del que está sonando.
   function alSonar(tipo, accion) {
@@ -868,11 +912,20 @@
   // ====== VOLUMEN ======
   if (/iPad|iPhone|iPod/.test(navigator.userAgent)) document.body.classList.add("es-ios");   // en iPhone solo silencio
   function iconoVolumen() {
-    $("icono-vol").innerHTML = audio.muted ? ICONOS.mudo : ICONOS.volumen;
-    $("silencio").setAttribute("aria-label", audio.muted ? "Activar sonido" : "Silenciar");
+    $("icono-vol").innerHTML = mudo ? ICONOS.mudo : ICONOS.volumen;
+    $("silencio").setAttribute("aria-label", mudo ? "Activar sonido" : "Silenciar");
   }
-  $("volumen").addEventListener("input", e => { audio.volume = e.target.value; audio.muted = false; iconoVolumen(); });
-  $("silencio").addEventListener("click", () => { audio.muted = !audio.muted; iconoVolumen(); });
+  let volumen = 1, mudo = false;
+  function aplicarVolumen() {
+    if (grafo) {                    // con Web Audio, el volumen va en el grafo y los reproductores quedan al máximo
+      for (const el of [audio, otro]) { el.volume = 1; el.muted = false; }
+      grafo.vol.gain.setTargetAtTime(mudo ? 0 : volumen, grafo.ctx.currentTime, 0.02);
+    } else {
+      for (const el of [audio, otro]) { el.volume = volumen; el.muted = mudo; }
+    }
+  }
+  $("volumen").addEventListener("input", e => { volumen = Number(e.target.value); mudo = false; aplicarVolumen(); iconoVolumen(); });
+  $("silencio").addEventListener("click", () => { mudo = !mudo; aplicarVolumen(); iconoVolumen(); });
 
   // ====== COMPARTIR ======
   // En el celular abre WhatsApp, Instagram, etc.; en la PC copia el enlace
