@@ -319,26 +319,6 @@
   .c-estado.mal { color: #c0392b; }
   @media (prefers-color-scheme: dark) { .c-estado.mal { color: #ff8a7a; } }
 
-  /* ====== Mini reproductor: aparece abajo cuando el botón de play queda fuera de la pantalla ====== */
-  .minirep {
-    position: fixed; left: 50%; bottom: .75rem; z-index: 20;
-    width: min(30rem, calc(100% - 1.5rem)); transform: translate(-50%, 140%);
-    display: flex; align-items: center; gap: .8rem;
-    background: var(--tarjeta); border: 2px solid var(--linea); border-radius: 1rem;
-    padding: .55rem .7rem .55rem .9rem; box-shadow: 5px 5px 0 var(--tinta-a);
-    transition: transform .25s ease; visibility: hidden;
-  }
-  .minirep.visible { transform: translate(-50%, 0); visibility: visible; }
-  @media (prefers-reduced-motion: reduce) { .minirep { transition: none; } }
-  .minirep-texto { min-width: 0; flex: 1; line-height: 1.25; }
-  .minirep-texto b, .minirep-texto span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .minirep-texto b { font-weight: 700; font-size: .95rem; }
-  .minirep-texto span { color: var(--suave); font-size: .82rem; }
-  .minirep .play { width: 3rem; height: 3rem; box-shadow: 3px 3px 0 var(--tinta-a); }
-  .minirep .play svg { width: 1.3rem; height: 1.3rem; }
-  .minirep .play.cargando::after { width: 1.1rem; height: 1.1rem; }
-  body.con-minirep { padding-bottom: 6rem; }
-
   footer {
     margin-top: 2.5rem;
     font-size: .82rem; line-height: 1.55; color: var(--suave);
@@ -456,21 +436,14 @@
 </section>
 
 <footer>
-  <p>Indie Pop en Español es una radio online gratuita desde Montevideo, Uruguay. Pasa pop independiente
-  e indie pop en español las 24 horas, sin publicidad, con canciones de artistas independientes de
-  Latinoamérica y España. Escuchala en vivo desde el celular o la computadora, sin registrarte.</p>
+  <p>Indie Pop en Español es una radio online gratuita desde Montevideo, Uruguay. Suena las 24 horas,
+  sin publicidad, con canciones de artistas independientes de Latinoamérica y España. Escuchala en
+  vivo desde el celular o la computadora, sin registrarte.</p>
   <p>La música es de artistas independientes, bajo licencias Creative Commons. Cada tema pertenece a su artista.</p>
 </footer>
 </div>
 </div>
 
-<!-- Mini reproductor fijo: se muestra cuando el play grande no está a la vista -->
-<div class="minirep" id="minirep" aria-hidden="true">
-  <div class="minirep-texto"><b id="mini-titulo">Indie Pop en Español</b><span id="mini-artista"></span></div>
-  <button class="play" id="mini-play" aria-label="Escuchar" tabindex="-1">
-    <svg id="mini-icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-  </button>
-</div>
 
 <audio id="audio" preload="none"></audio>
 
@@ -484,7 +457,7 @@
   const RETRASO = 2;        // segundos que tarda el audio en llegar, cuando no se puede medir exacto
 
   const $ = id => document.getElementById(id);
-  const audio = $("audio"), caja = $("reproductor"), play = $("play"), miniPlay = $("mini-play");
+  const audio = $("audio"), caja = $("reproductor"), play = $("play");
   const ICONOS = {
     play: '<path d="M8 5v14l11-7z"/>',
     pausa: '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>',
@@ -586,7 +559,7 @@
     const s = situacion();
     const enAire = !!radio.al_aire;
     caja.classList.toggle("apagada", !enAire);
-    play.disabled = miniPlay.disabled = !enAire && !quiereEscuchar;
+    play.disabled = !enAire && !quiereEscuchar;
     $("estado").textContent = !enAire ? "Fuera del aire" : modo === "sonando" ? "Escuchando" : "En vivo";
     $("oyentes").hidden = !(radio.oyentes > 0);
     $("oyentes").textContent = radio.oyentes + (radio.oyentes === 1 ? " oyente" : " oyentes");
@@ -609,8 +582,6 @@
     $("titulo").textContent = titulo;
     $("titulo").classList.toggle("largo", titulo.length > 26);
     $("artista").textContent = artista;
-    $("mini-titulo").textContent = titulo;
-    $("mini-artista").textContent = tema ? artista : enAire ? "" : "Fuera del aire";
     ponerTapa($("tapa"), tema && tema.image);
     dibujarCredito(tema);
     dibujarSiguiente(s && s.siguiente);
@@ -699,12 +670,10 @@
 
   function ponerModo(nuevo) {
     modo = nuevo;
-    for (const b of [play, miniPlay]) {
-      b.classList.toggle("cargando", modo === "cargando");
-      b.setAttribute("aria-busy", modo === "cargando");
-      b.setAttribute("aria-label", modo === "detenido" ? "Escuchar" : "Pausar");
-    }
-    $("icono").innerHTML = $("mini-icono").innerHTML = modo === "sonando" ? ICONOS.pausa : ICONOS.play;
+    play.classList.toggle("cargando", modo === "cargando");
+    play.setAttribute("aria-busy", modo === "cargando");
+    play.setAttribute("aria-label", modo === "detenido" ? "Escuchar" : "Pausar");
+    $("icono").innerHTML = modo === "sonando" ? ICONOS.pausa : ICONOS.play;
     caja.classList.toggle("sonando", modo === "sonando");
     if ("mediaSession" in navigator) navigator.mediaSession.playbackState = modo === "detenido" ? "paused" : "playing";
     temaMostrado = null;      // vuelve a dibujar el tema (cambia la pestaña y lo que se muestra)
@@ -712,7 +681,7 @@
   }
 
   function conectar() {
-    clearTimeout(espera);
+    clearTimeout(espera); espera = null;
     ponerModo("cargando");
     miId = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
     miInicio = null;
@@ -728,7 +697,7 @@
   function detener() {
     quiereEscuchar = false;
     miId = ""; miInicio = null;
-    clearTimeout(espera);
+    clearTimeout(espera); espera = null;
     audio.pause();
     audio.removeAttribute("src");
     audio.load();
@@ -752,7 +721,6 @@
     else if (radio && radio.al_aire) { quiereEscuchar = true; reintentos = 0; decir("Conectando…"); conectar(); }
   }
   play.addEventListener("click", tocarPlay);
-  miniPlay.addEventListener("click", tocarPlay);
   audio.addEventListener("playing", () => { reintentos = 0; decir(""); ponerModo("sonando"); });
   audio.addEventListener("waiting", () => { if (quiereEscuchar) ponerModo("cargando"); });
   audio.addEventListener("error", () => { if (quiereEscuchar && audio.getAttribute("src")) reintentar(); });
@@ -762,6 +730,23 @@
     clearTimeout(espera);
     espera = setTimeout(() => { if (audio.paused || audio.readyState < 3) reintentar(); }, 8000);
   });
+
+  // Vigilante: si el audio se queda trabado sin avisar, se reconecta solo.
+  let ultimoTiempo = -1, quieto = 0, cargandoDesde = 0;
+  setInterval(() => {
+    if (!quiereEscuchar) { quieto = 0; cargandoDesde = 0; return; }
+    if (modo === "sonando") {
+      cargandoDesde = 0;
+      quieto = audio.currentTime === ultimoTiempo ? quieto + 1 : 0;
+      ultimoTiempo = audio.currentTime;
+      if (quieto >= 3) { quieto = 0; reintentar(); }                 // 6 segundos sin avanzar
+    } else if (modo === "cargando" && !espera) {
+      cargandoDesde = cargandoDesde || Date.now();
+      if (Date.now() - cargandoDesde > 15000) { cargandoDesde = 0; reintentar(); }   // 15 s "cargando"
+    }
+  }, 2000);
+  // Volvió internet (o el celular cambió de wifi a datos): se reconecta enseguida
+  window.addEventListener("online", () => { if (quiereEscuchar && modo !== "sonando") { reintentos = 0; conectar(); } });
 
   // Barra espaciadora = play / pausa (salvo que se esté escribiendo o sobre un botón)
   document.addEventListener("keydown", e => {
@@ -784,18 +769,6 @@
   }
   $("volumen").addEventListener("input", e => { audio.volume = e.target.value; audio.muted = false; iconoVolumen(); });
   $("silencio").addEventListener("click", () => { audio.muted = !audio.muted; iconoVolumen(); });
-
-  // ====== MINI REPRODUCTOR ======
-  // Aparece abajo cuando los controles grandes salen de la pantalla
-  if ("IntersectionObserver" in window) {
-    new IntersectionObserver(([controles]) => {
-      const mostrar = !controles.isIntersecting;
-      $("minirep").classList.toggle("visible", mostrar);
-      $("minirep").setAttribute("aria-hidden", !mostrar);
-      miniPlay.tabIndex = mostrar ? 0 : -1;
-      document.body.classList.toggle("con-minirep", mostrar);
-    }, { threshold: 0.2 }).observe(document.querySelector(".controles"));
-  }
 
   // ====== COMPARTIR ======
   // En el celular abre WhatsApp, Instagram, etc.; en la PC copia el enlace
